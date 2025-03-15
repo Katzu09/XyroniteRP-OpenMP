@@ -62,7 +62,7 @@
         "log_sqlite_queries": false,
         "timestamp_format": "[%Y-%m-%dT%H:%M:%S%z]",
         "use_prefix": true,
-        "use_timestamp": true
+        "use_timestamp": false
     },
     "max_bots": 0,
     "max_players": 50,
@@ -90,12 +90,14 @@
         "stream_radius": 200.0,
         "stream_rate": 1000,
         "time_sync_rate": 30000,
-        "use_lan_mode": false,
-        "use_omp_encryption": false
+        "use_lan_mode": true,
+        "use_omp_encryption": true
     },
     "password": "",
     "pawn": {
         "legacy_plugins": [
+            "crashdetect",
+            "mysql",
             "streamer"
         ],
         "main_scripts": [

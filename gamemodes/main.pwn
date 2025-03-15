@@ -1,7 +1,17 @@
 #include <open.mp>
+#include <a_mysql>
 #include <sscanf2>
+#include <crashdetect>
+#include <YSI_Data\y_iterate>
 #include <streamer>
 #include <Pawn.CMD>
+#include <YSI_Coding\y_timers>
+
+/*=================*/
+	/*MODULAR*/
+/*=================*/
+// #include "modules/utils/timers"
+
 
 main()
 {
@@ -20,6 +30,13 @@ public OnGameModeInit()
 	return 1;
 }
 
+task OnSecondUpdate[2000]()
+{
+    printf("  |  LevelUP Roleplay! |");
+    return 1;
+}
+
+
 public OnGameModeExit()
 {
 	return 1;
@@ -27,6 +44,21 @@ public OnGameModeExit()
 
 public OnPlayerConnect(playerid)
 {
+	foreach (new i : Player)
+    {
+        SendClientMessage(i, -1, "hallo");
+    }
+	new string[32], num;
+
+    // Perbaikan sscanf (menambahkan panjang string)
+    if (sscanf("1234 Test", "dS()[32]", num, string))
+    {
+        SendClientMessage(playerid, -1, "sscanf gagal membaca string!");
+    }
+    else
+    {
+        SendClientMessage(playerid, -1, "sscanf berhasil! Number: %d, String: %s", num, string);
+    }
 	return 1;
 }
 

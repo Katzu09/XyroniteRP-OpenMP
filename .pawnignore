@@ -1,0 +1,18 @@
+// Usage: Right click on a file or a folder in your workspace to add into .pawnignore
+// Explanation: This way you'll tell extension not to parse these files for auto-complete and intellisense.  
+// If you are having problems, please report issue at https://github.com/openmultiplayer/vscode-pawn/issues
+
+qawno/include/amx
+qawno/include/code-parse
+qawno/include/indirection
+qawno/include/md-sort
+qawno/include/YSI
+qawno/include/YSI_Coding
+qawno/include/YSI_Visual
+qawno/include/YSI_Core
+qawno/include/YSI_Data
+qawno/include/YSI_Extra
+qawno/include/YSI_Game
+qawno/include/YSI_Players
+qawno/include/YSI_Server
+qawno/include/YSI_Storage
