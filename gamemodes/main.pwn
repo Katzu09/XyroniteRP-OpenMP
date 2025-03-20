@@ -1,42 +1,24 @@
-#if defined DONT_REMOVE
+/*	
+						 _____                    ____  ______
+						/__  /  ___  ____  ____  / __ \/ ____/
+						  / /  / _ \/ __ \/ __ \/ / / / /     
+						 / /__/  __/ / / / / / / /_/ / /___   
+						/____/\___/_/ /_/_/ /_/\____/\____/  
 
-    » Gamemode Xyronite by Luminouz
-    
-    > Credits: - Kalcor (For the SA:MP)
-			   - Y_Less (For the YSI, sscanf, foreach)
-			   - pBlueG (For the MySQL)
-			   - ZeeX (For the IZCMD)
-			   - Yashas (For the EVF2)
-			   - SyS (For the samp-bcrypt)
-			   - Southclaws (For the progress2)
-			   - Incognito (For the streamer)
-			   - LuminouZ (For the main Gamemode Scripter)
-			   
-    > NOTE: Please don't remove the credits!
-    
-    
-    ===================== » Changelog ========================
-    
-    > Added Owner Vehicle System
-    > Added Vehicle Insurance System
-    > Added Dynamic Inventory System
-    
-#endif
-
+*/ ''
 /* Includes */
 #include <open.mp>
 #include <a_mysql>
+#include <crashdetect>
 #include <YSI_Coding\y_va>
 #include <YSI_Coding\y_timers>
 #include <samp_bcrypt>
 #include <Pawn.CMD>
-#include <EVF2>
 #include <progress2>
 #include <sscanf2>
 #include <streamer>
 
 /* Define & Macro */
-#define MIXED_SPELLINGS
 #define forex(%0,%1) for(new %0 = 0; %0 < %1; %0++)
 
 #define FUNC::%0(%1) forward %0(%1); public %0(%1)
@@ -73,7 +55,7 @@
 #define SendErrorMessage(%0,%1) \
 	SendClientMessageEx(%0, COLOR_GREY, "ERROR: "%1)
 	
-#define MAX_PLAYER_VEHICLE 			1000
+#define MAX_PLAYER_VEHICLE 			100
 #define MAX_INVENTORY 				20
 #define MAX_BUSINESS                100
 #define MAX_DROPPED_ITEMS  			1000
@@ -200,10 +182,10 @@ enum vData
 	vFuel,
 	vVehicle,
 	vDamage[4],
-	VEHICLE_PANEL_STATUS:vPanelDamage, // Menggunakan tag VEHICLE_PANEL_STATUS
-    VEHICLE_DOOR_STATUS:vDoorDamage,   // Menggunakan tag VEHICLE_DOOR_STATUS
-    VEHICLE_LIGHT_STATUS:vLightDamage, // Menggunakan tag VEHICLE_LIGHT_STATUS
-    VEHICLE_TIRE_STATUS:vTireDamage,    // Menggunakan tag VEHICLE_TIRE_STATUS
+	VEHICLE_PANEL_STATUS:vPanelDamage,
+    VEHICLE_DOOR_STATUS:vDoorDamage,
+    VEHICLE_LIGHT_STATUS:vLightDamage,
+    VEHICLE_TIRE_STATUS:vTireDamage,
 	bool:vExists,
 	vRental,
 	vRentTime,
@@ -330,7 +312,7 @@ stock GetElapsedTime(time, &hours, &minutes, &seconds)
 {
 	hours = 0;
 	minutes = 0;
-	seconds = 0;
+	// seconds = 0;
 
 	if (time >= 3600)
 	{
@@ -404,7 +386,7 @@ FUNC::OnPlayerUseItem(playerid, itemid, const name[])
 
         PlayerData[playerid][pEnergy] += 10;
 		Inventory_Remove(playerid, "Snack", 1);
-		ApplyAnimation(playerid, "FOOD", "EAT_Burger", 4.1, 0, 0, 0, 0, 0, SYNC_ALL);
+		ApplyAnimation(playerid, "FOOD", "EAT_Burger", 4.1, false, false, false, false, 0, SYNC_ALL);
         SendNearbyMessage(playerid, 30.0, COLOR_PURPLE, "* %s takes a snack and eats it.", ReturnName(playerid));
 	}
 	else if(!strcmp(name, "Water"))
@@ -737,7 +719,7 @@ DropPlayerItem(playerid, itemid, quantity = 1)
 	DropItem(string, ReturnName(playerid), InventoryData[playerid][itemid][invModel], quantity, x, y, z - 0.9, GetPlayerInterior(playerid), GetPlayerVirtualWorld(playerid));
  	Inventory_Remove(playerid, string, quantity);
 
-	ApplyAnimation(playerid, "GRENADE", "WEAPON_throwu", 4.1, 0, 0, 0, 0, 0, SYNC_ALL);
+	ApplyAnimation(playerid, "GRENADE", "WEAPON_throwu", 4.1, false, false, false, false, 0, SYNC_ALL);
  	SendNearbyMessage(playerid, 20.0, COLOR_PURPLE, "* %s has dropped a \"%s\".", ReturnName(playerid), string);
 	return 1;
 }
@@ -1231,7 +1213,7 @@ stock GetVehicleSpeedKMH(vehicleid)
 	new Float:speed_x, Float:speed_y, Float:speed_z, Float:temp_speed, round_speed;
 	GetVehicleVelocity(vehicleid, speed_x, speed_y, speed_z);
 
-	temp_speed = temp_speed = floatsqroot(((speed_x*speed_x) + (speed_y*speed_y)) + (speed_z*speed_z)) * 136.666667;
+	temp_speed = floatsqroot(((speed_x*speed_x) + (speed_y*speed_y)) + (speed_z*speed_z)) * 136.666667;
 
 	round_speed = floatround(temp_speed);
 	return round_speed;
@@ -1271,11 +1253,11 @@ stock CreatePlayerHUD(playerid)
 	PlayerTextDrawSetShadow(playerid, ENERGYTD[playerid][0], 0);
 	PlayerTextDrawAlignment(playerid, ENERGYTD[playerid][0], TEXT_DRAW_ALIGN_CENTRE);
 	PlayerTextDrawColour(playerid, ENERGYTD[playerid][0], -1);
-	PlayerTextDrawBackgroundColor(playerid, ENERGYTD[playerid][0], 255);
+	PlayerTextDrawBackgroundColour(playerid, ENERGYTD[playerid][0], 255);
 	PlayerTextDrawBoxColour(playerid, ENERGYTD[playerid][0], 135);
-	PlayerTextDrawUseBox(playerid, ENERGYTD[playerid][0], 1);
-	PlayerTextDrawSetProportional(playerid, ENERGYTD[playerid][0], 1);
-	PlayerTextDrawSetSelectable(playerid, ENERGYTD[playerid][0], 0);
+	PlayerTextDrawUseBox(playerid, ENERGYTD[playerid][0], true);
+	PlayerTextDrawSetProportional(playerid, ENERGYTD[playerid][0], true);
+	PlayerTextDrawSetSelectable(playerid, ENERGYTD[playerid][0], false);
 
 	ENERGYTD[playerid][1] = CreatePlayerTextDraw(playerid, 547.000000, 136.000000, "ENERGY");
 	PlayerTextDrawFont(playerid, ENERGYTD[playerid][1], TEXT_DRAW_FONT_1);
@@ -1285,11 +1267,11 @@ stock CreatePlayerHUD(playerid)
 	PlayerTextDrawSetShadow(playerid, ENERGYTD[playerid][1], 0);
 	PlayerTextDrawAlignment(playerid, ENERGYTD[playerid][1], TEXT_DRAW_ALIGN_LEFT);
 	PlayerTextDrawColour(playerid, ENERGYTD[playerid][1], -168436481);
-	PlayerTextDrawBackgroundColor(playerid, ENERGYTD[playerid][1], 255);
+	PlayerTextDrawBackgroundColour(playerid, ENERGYTD[playerid][1], 255);
 	PlayerTextDrawBoxColour(playerid, ENERGYTD[playerid][1], 50);
-	PlayerTextDrawUseBox(playerid, ENERGYTD[playerid][1], 0);
-	PlayerTextDrawSetProportional(playerid, ENERGYTD[playerid][1], 1);
-	PlayerTextDrawSetSelectable(playerid, ENERGYTD[playerid][1], 0);
+	PlayerTextDrawUseBox(playerid, ENERGYTD[playerid][1], false);
+	PlayerTextDrawSetProportional(playerid, ENERGYTD[playerid][1], true);
+	PlayerTextDrawSetSelectable(playerid, ENERGYTD[playerid][1], false);
 	
 	/* Speedometer */
 	SPEEDOTD[playerid][0] = CreatePlayerTextDraw(playerid, 572.000000, 372.000000, "_");
@@ -1300,11 +1282,11 @@ stock CreatePlayerHUD(playerid)
 	PlayerTextDrawSetShadow(playerid, SPEEDOTD[playerid][0], 0);
 	PlayerTextDrawAlignment(playerid, SPEEDOTD[playerid][0], TEXT_DRAW_ALIGN_CENTRE);
 	PlayerTextDrawColour(playerid, SPEEDOTD[playerid][0], -1);
-	PlayerTextDrawBackgroundColor(playerid, SPEEDOTD[playerid][0], 255);
+	PlayerTextDrawBackgroundColour(playerid, SPEEDOTD[playerid][0], 255);
 	PlayerTextDrawBoxColour(playerid, SPEEDOTD[playerid][0], 135);
-	PlayerTextDrawUseBox(playerid, SPEEDOTD[playerid][0], 1);
-	PlayerTextDrawSetProportional(playerid, SPEEDOTD[playerid][0], 1);
-	PlayerTextDrawSetSelectable(playerid, SPEEDOTD[playerid][0], 0);
+	PlayerTextDrawUseBox(playerid, SPEEDOTD[playerid][0], false);
+	PlayerTextDrawSetProportional(playerid, SPEEDOTD[playerid][0], true);
+	PlayerTextDrawSetSelectable(playerid, SPEEDOTD[playerid][0], false);
 
 	SPEEDOTD[playerid][1] = CreatePlayerTextDraw(playerid, 519.000000, 412.000000, "FUEL:");
 	PlayerTextDrawFont(playerid, SPEEDOTD[playerid][1], TEXT_DRAW_FONT_2);
@@ -1314,11 +1296,11 @@ stock CreatePlayerHUD(playerid)
 	PlayerTextDrawSetShadow(playerid, SPEEDOTD[playerid][1], 0);
 	PlayerTextDrawAlignment(playerid, SPEEDOTD[playerid][1], TEXT_DRAW_ALIGN_LEFT);
 	PlayerTextDrawColour(playerid, SPEEDOTD[playerid][1], -1061109505);
-	PlayerTextDrawBackgroundColor(playerid, SPEEDOTD[playerid][1], 255);
+	PlayerTextDrawBackgroundColour(playerid, SPEEDOTD[playerid][1], 255);
 	PlayerTextDrawBoxColour(playerid, SPEEDOTD[playerid][1], 50);
-	PlayerTextDrawUseBox(playerid, SPEEDOTD[playerid][1], 0);
-	PlayerTextDrawSetProportional(playerid, SPEEDOTD[playerid][1], 1);
-	PlayerTextDrawSetSelectable(playerid, SPEEDOTD[playerid][1], 0);
+	PlayerTextDrawUseBox(playerid, SPEEDOTD[playerid][1], false);
+	PlayerTextDrawSetProportional(playerid, SPEEDOTD[playerid][1], true);
+	PlayerTextDrawSetSelectable(playerid, SPEEDOTD[playerid][1], false);
 
 	SPEEDOTD[playerid][2] = CreatePlayerTextDraw(playerid, 519.000000, 396.000000, "HEALTH:");
 	PlayerTextDrawFont(playerid, SPEEDOTD[playerid][2], TEXT_DRAW_FONT_2);
@@ -1328,11 +1310,11 @@ stock CreatePlayerHUD(playerid)
 	PlayerTextDrawSetShadow(playerid, SPEEDOTD[playerid][2], 0);
 	PlayerTextDrawAlignment(playerid, SPEEDOTD[playerid][2], TEXT_DRAW_ALIGN_LEFT);
 	PlayerTextDrawColour(playerid, SPEEDOTD[playerid][2], -1061109505);
-	PlayerTextDrawBackgroundColor(playerid, SPEEDOTD[playerid][2], 255);
+	PlayerTextDrawBackgroundColour(playerid, SPEEDOTD[playerid][2], 255);
 	PlayerTextDrawBoxColour(playerid, SPEEDOTD[playerid][2], 50);
-	PlayerTextDrawUseBox(playerid, SPEEDOTD[playerid][2], 0);
-	PlayerTextDrawSetProportional(playerid, SPEEDOTD[playerid][2], 1);
-	PlayerTextDrawSetSelectable(playerid, SPEEDOTD[playerid][2], 0);
+	PlayerTextDrawUseBox(playerid, SPEEDOTD[playerid][2], false);
+	PlayerTextDrawSetProportional(playerid, SPEEDOTD[playerid][2], true);
+	PlayerTextDrawSetSelectable(playerid, SPEEDOTD[playerid][2], false);
 
 	HEALTHTD[playerid] = CreatePlayerTextDraw(playerid, 572.000000, 396.000000, "--");
 	PlayerTextDrawFont(playerid, HEALTHTD[playerid], TEXT_DRAW_FONT_2);
@@ -1342,11 +1324,11 @@ stock CreatePlayerHUD(playerid)
 	PlayerTextDrawSetShadow(playerid, HEALTHTD[playerid], 0);
 	PlayerTextDrawAlignment(playerid, HEALTHTD[playerid], TEXT_DRAW_ALIGN_LEFT);
 	PlayerTextDrawColour(playerid, HEALTHTD[playerid], -1061109505);
-	PlayerTextDrawBackgroundColor(playerid, HEALTHTD[playerid], 255);
+	PlayerTextDrawBackgroundColour(playerid, HEALTHTD[playerid], 255);
 	PlayerTextDrawBoxColour(playerid, HEALTHTD[playerid], 50);
-	PlayerTextDrawUseBox(playerid, HEALTHTD[playerid], 0);
-	PlayerTextDrawSetProportional(playerid, HEALTHTD[playerid], 1);
-	PlayerTextDrawSetSelectable(playerid, HEALTHTD[playerid], 0);
+	PlayerTextDrawUseBox(playerid, HEALTHTD[playerid], false);
+	PlayerTextDrawSetProportional(playerid, HEALTHTD[playerid], true);
+	PlayerTextDrawSetSelectable(playerid, HEALTHTD[playerid], false);
 
 	SPEEDOTD[playerid][3] = CreatePlayerTextDraw(playerid, 519.000000, 380.000000, "SPEED:");
 	PlayerTextDrawFont(playerid, SPEEDOTD[playerid][3], TEXT_DRAW_FONT_2);
@@ -2296,7 +2278,7 @@ public OnPlayerStateChange(playerid, PLAYER_STATE:newstate, PLAYER_STATE:oldstat
 			PlayerTextDrawShow(playerid, KMHTD[playerid]);
 			PlayerTextDrawShow(playerid, VEHNAMETD[playerid]);
 			PlayerTextDrawShow(playerid, HEALTHTD[playerid]);
-			FUELBAR[playerid] = CreatePlayerProgressBar(playerid, 520.000000, 433.000000, 110.000000, 7.000000, 9109759, 100.000000, 0);
+			FUELBAR[playerid] = CreatePlayerProgressBar(playerid, 520.000000, 433.000000, 110.000000, 7.000000, 9109759, 100.000000, BAR_DIRECTION_RIGHT);
 		}
 		if(pvid != -1 && VehicleData[pvid][vRental] != -1)
 		{
@@ -2906,7 +2888,7 @@ public OnPlayerSpawn(playerid)
 		SetPlayerInterior(playerid, PlayerData[playerid][pInterior]);
 		PlayerTextDrawShow(playerid, ENERGYTD[playerid][0]);
 		PlayerTextDrawShow(playerid, ENERGYTD[playerid][1]);
-		ENERGYBAR[playerid] = CreatePlayerProgressBar(playerid, 539.000000, 158.000000, 69.500000, 9.000000, 9109759, 100.000000, 0);
+		ENERGYBAR[playerid] = CreatePlayerProgressBar(playerid, 539.000000, 158.000000, 69.500000, 9.000000, 9109759, 100.000000, BAR_DIRECTION_RIGHT);
 	}
 	return 1;
 }
@@ -3354,7 +3336,7 @@ CMD:veh(playerid, params[])
 	GetPlayerPos(playerid, x, y, z);
 	GetPlayerFacingAngle(playerid, a);
 
-	vehicleid = CreateVehicle(model[0], x, y + 2, z, a, color1, color2, 0);
+	vehicleid = CreateVehicle(model[0], x, y + 2, z, a, color1, color2, 0, false);
 
 	if (GetPlayerInterior(playerid) != 0)
 	    LinkVehicleToInterior(vehicleid, GetPlayerInterior(playerid));

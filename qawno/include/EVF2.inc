@@ -1792,12 +1792,21 @@ forward OnVehicleFuelChange(vehicleid,newfuel,oldfuel);
 	forward OnVehicleHealthChange(vehicleid,Float:newhealth,Float:oldhealth);
 #endif
 
-EVF::Function:: ResetVehicleProperties(vehicleid){
-	EVF::VehicleTrailerID[vehicleid] = INVALID_VEHICLE_ID;
-	for(new i = 0; i < _:(EVF::VehicleProperties); i++){
-		EVF::VehicleProperty[vehicleid][EVF::VehicleProperties:i] = 0;
-	}
+EVF::Function:: ResetVehicleProperties(vehicleid) {
+    if (vehicleid == INVALID_VEHICLE_ID || !IsValidVehicle(vehicleid)) {
+        printf("[ERROR] ResetVehicleProperties: vehicleid tidak valid (%d)", vehicleid);
+        return;
+    }
+
+    EVF::VehicleTrailerID[vehicleid] = INVALID_VEHICLE_ID;
+
+    for (new i = 0; i < _:(EVF::VehicleProperties); i++) {
+        EVF::VehicleProperty[vehicleid][EVF::VehicleProperties:i] = 0;
+    }
+
+    printf("[DEBUG] ResetVehicleProperties sukses untuk vehicleid: %d", vehicleid);
 }
+
 
 EVF::Function:: GetComponentName(componentid,name[],len = sizeof(name)){
 	if(MIN_VEHICLE_COMPONENT_ID <= componentid <= MAX_VEHICLE_COMPONENT_ID){
@@ -2077,32 +2086,60 @@ EVF::Function:: IsVehicleBombActivated(vehicleid){
 	return 0;
 }
 
-EVF::Function:: EVF::UpdateVehicleDamage(vehicleid,type){
-	new panels, doors, lights, tires;
-	GetVehicleDamageStatus(vehicleid, panels, doors, lights, tires);
-	switch(type){
-		case VEHICLE_DAMAGE_PANELS: panels = 0x03331111;
-		case VEHICLE_DAMAGE_DOORS: doors = 0x04040404;
-		case VEHICLE_DAMAGE_LIGHTS: lights = 0x0000000F;
-	}
-	UpdateVehicleDamageStatus(vehicleid, panels, doors, lights, tires);
-	return 1;
+EVF::Function:: EVF::UpdateVehicleDamage(vehicleid, type) {
+    new VEHICLE_PANEL_STATUS:panels;
+    new VEHICLE_DOOR_STATUS:doors;
+    new VEHICLE_LIGHT_STATUS:lights;
+    new VEHICLE_TIRE_STATUS:tires;
+
+    // Mengambil status kerusakan kendaraan
+    GetVehicleDamageStatus(vehicleid, panels, doors, lights, tires);
+
+    // Memperbarui kerusakan berdasarkan tipe
+    switch(type) {
+        case VEHICLE_DAMAGE_PANELS: panels = VEHICLE_PANEL_STATUS:0x03331111;
+        case VEHICLE_DAMAGE_DOORS: doors = VEHICLE_DOOR_STATUS:0x04040404;
+        case VEHICLE_DAMAGE_LIGHTS: lights = VEHICLE_LIGHT_STATUS:0x0000000F;
+    }
+
+    // Memperbarui status kerusakan kendaraan
+    UpdateVehicleDamageStatus(vehicleid, panels, doors, lights, tires);
+    return 1;
 }
 
-EVF::Function:: EVF::UpdateVehicleDamageStatus(vehicleid, type, update){
-	new panels, doors, lights, tires;
-	GetVehicleDamageStatus(vehicleid, panels, doors, lights, tires);
-	switch(type){
-		case VEHICLE_DAMAGE_PANELS: return UpdateVehicleDamageStatus(vehicleid, update, doors, lights, tires);
-		case VEHICLE_DAMAGE_DOORS: return UpdateVehicleDamageStatus(vehicleid, panels, update, lights, tires);
-		case VEHICLE_DAMAGE_LIGHTS: return UpdateVehicleDamageStatus(vehicleid, panels, doors, update, tires);
-		case VEHICLE_DAMAGE_TIRES: return UpdateVehicleDamageStatus(vehicleid, panels, doors, lights, update);
-	}
-	return false;
+EVF::Function:: EVF::UpdateVehicleDamageStatus(vehicleid, type, value) {
+    new VEHICLE_PANEL_STATUS:panels;
+    new VEHICLE_DOOR_STATUS:doors;
+    new VEHICLE_LIGHT_STATUS:lights;
+    new VEHICLE_TIRE_STATUS:tires;
+
+    // Mengambil status kerusakan kendaraan
+    GetVehicleDamageStatus(vehicleid, panels, doors, lights, tires);
+
+    // Memperbarui kerusakan berdasarkan tipe
+    switch(type) {
+        case VEHICLE_DAMAGE_PANELS: {
+            panels = VEHICLE_PANEL_STATUS:value; // Cast nilai ke tag yang benar
+            return UpdateVehicleDamageStatus(vehicleid, panels, doors, lights, tires);
+        }
+        case VEHICLE_DAMAGE_DOORS: {
+            doors = VEHICLE_DOOR_STATUS:value; // Cast nilai ke tag yang benar
+            return UpdateVehicleDamageStatus(vehicleid, panels, doors, lights, tires);
+        }
+        case VEHICLE_DAMAGE_LIGHTS: {
+            lights = VEHICLE_LIGHT_STATUS:value; // Cast nilai ke tag yang benar
+            return UpdateVehicleDamageStatus(vehicleid, panels, doors, lights, tires);
+        }
+        case VEHICLE_DAMAGE_TIRES: {
+            tires = VEHICLE_TIRE_STATUS:value; // Cast nilai ke tag yang benar
+            return UpdateVehicleDamageStatus(vehicleid, panels, doors, lights, tires);
+        }
+    }
+    return false; // Jika tipe tidak valid
 }
 
 EVF::Function:: EVF::GetVehicleDamageStatus(vehicleid, type){
-	new panels,doors,lights,tires;
+	new VEHICLE_PANEL_STATUS:panels, VEHICLE_DOOR_STATUS:doors, VEHICLE_LIGHT_STATUS:lights, VEHICLE_TIRE_STATUS:tires;
 	GetVehicleDamageStatus(vehicleid, panels, doors, lights, tires);
 	switch(type){
 		case VEHICLE_DAMAGE_PANELS: return panels;
@@ -2748,7 +2785,7 @@ EVF::Function:: EVF::ChangeVehicleColor(vehicleid,color1,color2){
 		if(color1 == -1) color1 = randcolor1;
 		if(color2 == -1) color2 = randcolor2;
 	}
-	if(ChangeVehicleColor(vehicleid,color1,color2)){
+	if(ChangeVehicleColours(vehicleid,color1,color2)){
 		SetVehiclePropertyValue(vehicleid,e_VEHICLE_COLOR_1,color1);
 		SetVehiclePropertyValue(vehicleid,e_VEHICLE_COLOR_2,color2);
 		return 1;
@@ -2825,7 +2862,7 @@ public OnVehiclePaintjob(playerid,vehicleid,paintjobid){
 #endif
 
 //Hook: CreateVehicle
-EVF::Function:: EVF::CreateVehicle(modelid,Float:x,Float:y,Float:z,Float:angle,color1,color2,respawn_delay, addsiren = 0,worldid = 0,interiorid = 0,bool:unoccupied_damage = false){
+EVF::Function:: EVF::CreateVehicle(modelid,Float:x,Float:y,Float:z,Float:angle,color1,color2,respawn_delay, bool:addsiren = false, worldid = 0,interiorid = 0,bool:unoccupied_damage = false){
 	if(!IsValidVehicleModelID(modelid)) return INVALID_VEHICLE_ID;
 	new vehicleid = INVALID_VEHICLE_ID, randcolor1, randcolor2;
 	if(GetVehicleRandomColors(modelid,randcolor1,randcolor2)){
@@ -3411,7 +3448,7 @@ public OnPlayerKeyStateChange(playerid, KEY:newkeys, KEY:oldkeys){
 
 //Hook: OnVehicleDamageStatusUpdate
 public OnVehicleDamageStatusUpdate(vehicleid, playerid){
-	new panels, doors, lights, tires;
+	new VEHICLE_PANEL_STATUS:panels, VEHICLE_DOOR_STATUS:doors, VEHICLE_LIGHT_STATUS:lights, VEHICLE_TIRE_STATUS:tires;
 	GetVehicleDamageStatus(vehicleid, panels, doors, lights, tires);
 
 	if(!IsVehicleDamageToggled(vehicleid,VEHICLE_DAMAGE_PANELS)) EVF::UpdateVehicleDamageStatus(vehicleid, VEHICLE_DAMAGE_PANELS, VEHICLE_DOOR_STATUS_NONE);
