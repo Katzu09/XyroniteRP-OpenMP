@@ -54,7 +54,7 @@
 #define DATABASE_ADDRESS "localhost" //Change this to your Database Address
 #define DATABASE_USERNAME "root" // Change this to your database username
 #define DATABASE_PASSWORD "" //Change this to your database password
-#define DATABASE_NAME "omp-lv"
+#define DATABASE_NAME "basic"
 
 #if !defined BCRYPT_HASH_LENGTH
 	#define BCRYPT_HASH_LENGTH 250
@@ -1272,7 +1272,7 @@ stock CreatePlayerHUD(playerid)
 	PlayerTextDrawAlignment(playerid, ENERGYTD[playerid][0], TEXT_DRAW_ALIGN_CENTRE);
 	PlayerTextDrawColour(playerid, ENERGYTD[playerid][0], -1);
 	PlayerTextDrawBackgroundColor(playerid, ENERGYTD[playerid][0], 255);
-	PlayerTextDrawBoxColour(playerid, ENERGYTD[playerid][0], 135);
+	PlayerTextDrawBoxColor(playerid, ENERGYTD[playerid][0], 135);
 	PlayerTextDrawUseBox(playerid, ENERGYTD[playerid][0], 1);
 	PlayerTextDrawSetProportional(playerid, ENERGYTD[playerid][0], 1);
 	PlayerTextDrawSetSelectable(playerid, ENERGYTD[playerid][0], 0);
@@ -1286,7 +1286,7 @@ stock CreatePlayerHUD(playerid)
 	PlayerTextDrawAlignment(playerid, ENERGYTD[playerid][1], TEXT_DRAW_ALIGN_LEFT);
 	PlayerTextDrawColour(playerid, ENERGYTD[playerid][1], -168436481);
 	PlayerTextDrawBackgroundColor(playerid, ENERGYTD[playerid][1], 255);
-	PlayerTextDrawBoxColour(playerid, ENERGYTD[playerid][1], 50);
+	PlayerTextDrawBoxColor(playerid, ENERGYTD[playerid][1], 50);
 	PlayerTextDrawUseBox(playerid, ENERGYTD[playerid][1], 0);
 	PlayerTextDrawSetProportional(playerid, ENERGYTD[playerid][1], 1);
 	PlayerTextDrawSetSelectable(playerid, ENERGYTD[playerid][1], 0);
@@ -1301,7 +1301,7 @@ stock CreatePlayerHUD(playerid)
 	PlayerTextDrawAlignment(playerid, SPEEDOTD[playerid][0], TEXT_DRAW_ALIGN_CENTRE);
 	PlayerTextDrawColour(playerid, SPEEDOTD[playerid][0], -1);
 	PlayerTextDrawBackgroundColor(playerid, SPEEDOTD[playerid][0], 255);
-	PlayerTextDrawBoxColour(playerid, SPEEDOTD[playerid][0], 135);
+	PlayerTextDrawBoxColor(playerid, SPEEDOTD[playerid][0], 135);
 	PlayerTextDrawUseBox(playerid, SPEEDOTD[playerid][0], 1);
 	PlayerTextDrawSetProportional(playerid, SPEEDOTD[playerid][0], 1);
 	PlayerTextDrawSetSelectable(playerid, SPEEDOTD[playerid][0], 0);
@@ -1315,7 +1315,7 @@ stock CreatePlayerHUD(playerid)
 	PlayerTextDrawAlignment(playerid, SPEEDOTD[playerid][1], TEXT_DRAW_ALIGN_LEFT);
 	PlayerTextDrawColour(playerid, SPEEDOTD[playerid][1], -1061109505);
 	PlayerTextDrawBackgroundColor(playerid, SPEEDOTD[playerid][1], 255);
-	PlayerTextDrawBoxColour(playerid, SPEEDOTD[playerid][1], 50);
+	PlayerTextDrawBoxColor(playerid, SPEEDOTD[playerid][1], 50);
 	PlayerTextDrawUseBox(playerid, SPEEDOTD[playerid][1], 0);
 	PlayerTextDrawSetProportional(playerid, SPEEDOTD[playerid][1], 1);
 	PlayerTextDrawSetSelectable(playerid, SPEEDOTD[playerid][1], 0);
@@ -1329,7 +1329,7 @@ stock CreatePlayerHUD(playerid)
 	PlayerTextDrawAlignment(playerid, SPEEDOTD[playerid][2], TEXT_DRAW_ALIGN_LEFT);
 	PlayerTextDrawColour(playerid, SPEEDOTD[playerid][2], -1061109505);
 	PlayerTextDrawBackgroundColor(playerid, SPEEDOTD[playerid][2], 255);
-	PlayerTextDrawBoxColour(playerid, SPEEDOTD[playerid][2], 50);
+	PlayerTextDrawBoxColor(playerid, SPEEDOTD[playerid][2], 50);
 	PlayerTextDrawUseBox(playerid, SPEEDOTD[playerid][2], 0);
 	PlayerTextDrawSetProportional(playerid, SPEEDOTD[playerid][2], 1);
 	PlayerTextDrawSetSelectable(playerid, SPEEDOTD[playerid][2], 0);
@@ -1343,7 +1343,7 @@ stock CreatePlayerHUD(playerid)
 	PlayerTextDrawAlignment(playerid, HEALTHTD[playerid], TEXT_DRAW_ALIGN_LEFT);
 	PlayerTextDrawColour(playerid, HEALTHTD[playerid], -1061109505);
 	PlayerTextDrawBackgroundColor(playerid, HEALTHTD[playerid], 255);
-	PlayerTextDrawBoxColour(playerid, HEALTHTD[playerid], 50);
+	PlayerTextDrawBoxColor(playerid, HEALTHTD[playerid], 50);
 	PlayerTextDrawUseBox(playerid, HEALTHTD[playerid], 0);
 	PlayerTextDrawSetProportional(playerid, HEALTHTD[playerid], 1);
 	PlayerTextDrawSetSelectable(playerid, HEALTHTD[playerid], 0);

@@ -3,6 +3,11 @@ qawno/*
 
 gamemodes/main.amx
 
+logs/
+
+upgrader
+upgrade-0.1
+
 components/CustomModels.pdb
 components/Actors.dll
 components/Actors.pdb

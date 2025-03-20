@@ -98,6 +98,7 @@
         "legacy_plugins": [
             "crashdetect",
             "mysql",
+            "samp_bcrypt",
             "streamer"
         ],
         "main_scripts": [
@@ -106,11 +107,11 @@
         "side_scripts": []
     },
     "rcon": {
-        "allow_teleport": false,
-        "enable": false,
+        "allow_teleport": true,
+        "enable": true,
         "password": "zenn"
     },
     "sleep": 5.0,
     "use_dyn_ticks": true,
-    "website": "open.mp"
+    "website": "levelup.rp"
 }

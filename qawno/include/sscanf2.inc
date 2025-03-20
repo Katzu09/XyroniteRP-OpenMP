@@ -1052,28 +1052,28 @@ forward OnScriptInit SSCANF_BRACKETS;
  * case.
  * </remarks>
  */
-#if SSCANF_NPC
-	const SSCANF_STATIC__ SSCANF_OnGameModeInit = 0;
-	#define SSCANF_OnGameModeInit
-#else
-	public OnGameModeInit()
-	{
-		if (!SSCANF_gInit)
-		{
-			SSCANF_RunInit();
-		}
-		SSCANF_OnGameModeInit();
-		return 1;
-	}
+// #if SSCANF_NPC
+// 	const SSCANF_STATIC__ SSCANF_OnGameModeInit = 0;
+// 	#define SSCANF_OnGameModeInit
+// #else
+// 	public OnGameModeInit()
+// 	{
+// 		if (!SSCANF_gInit)
+// 		{
+// 			SSCANF_RunInit();
+// 		}
+// 		// SSCANF_OnGameModeInit();
+// 		return 1;
+// 	}
 
-	#if defined _ALS_OnGameModeInit
-		#undef OnGameModeInit
-	#else
-		#define _ALS_OnGameModeInit
-	#endif
-	#define OnGameModeInit(%0) CHAIN_PUBLIC:SSCANF_OnGameModeInit(%0)
-	CHAIN_FORWARD:SSCANF_OnGameModeInit() = 1;
-#endif
+// 	#if defined _ALS_OnGameModeInit
+// 		#undef OnGameModeInit
+// 	#else
+// 		#define _ALS_OnGameModeInit
+// 	#endif
+// 	#define OnGameModeInit(%0) CHAIN_PUBLIC:SSCANF_OnGameModeInit(%0)
+// 	CHAIN_FORWARD:SSCANF_OnGameModeInit() = 1;
+// #endif
 
 forward OnCachedInit();
 

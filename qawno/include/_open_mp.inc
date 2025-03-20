@@ -179,7 +179,7 @@ public const __OPEN_MP_VERSION = 0;
 		/* */ native __ShowPlayerMarkers();
 
 		// This does need the parameters as it is what users call.
-		stock ShowPlayerMarkers(PLAYER_MARKERS_MODE:mode)
+		stock void:ShowPlayerMarkers(PLAYER_MARKERS_MODE:mode)
 		{
 			// Remove the previous frame and return address from the stack.  We
 			// need to store these both temporarily across the `SYSREQ` call.
@@ -206,7 +206,7 @@ public const __OPEN_MP_VERSION = 0;
 
 		// The ideal would be:
 		#pragma naked
-		stock ShowPlayerMarkers(PLAYER_MARKERS_MODE:mode)
+		stock void:ShowPlayerMarkers(PLAYER_MARKERS_MODE:mode)
 		{
 			#emit POP.alt
 			#emit SYSREQ.C    __ShowPlayerMarkers
