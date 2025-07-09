@@ -1,5 +1,5 @@
-qawno/*
-!qawno/include/
+# qawno/*
+# !qawno/include/
 
 gamemodes/main.amx
 
@@ -8,64 +8,64 @@ logs/
 upgrader
 upgrade-0.1
 
-components/CustomModels.pdb
-components/Actors.dll
-components/Actors.pdb
-components/Checkpoints.dll
-components/Checkpoints.pdb
-components/Classes.dll
-components/Classes.pdb
-components/Console.dll
-components/Console.pdb
-components/CustomModels.dll
-components/Databases.dll
-components/Databases.pdb
-components/Dialogs.dll
-components/Dialogs.pdb
-components/Fixes.dll
-components/Fixes.pdb
-components/GangZones.dll
-components/GangZones.pdb
-components/LegacyConfig.dll
-components/LegacyConfig.pdb
-components/LegacyNetwork.dll
-components/LegacyNetwork.pdb
-components/Menus.dll
-components/Menus.pdb
-components/Objects.dll
-components/Objects.pdb
-components/Pawn.dll
-components/Pawn.pdb
-components/Pickups.dll
-components/Pickups.pdb
-components/Recordings.dll
-components/Recordings.pdb
-components/TextDraws.dll
-components/TextDraws.pdb
-components/TextLabels.dll
-components/TextLabels.pdb
-components/Timers.dll
-components/Timers.pdb
-components/Variables.dll
-components/Variables.pdb
-components/Vehicles.dll
-components/Vehicles.pdb
+# components/CustomModels.pdb
+# components/Actors.dll
+# components/Actors.pdb
+# components/Checkpoints.dll
+# components/Checkpoints.pdb
+# components/Classes.dll
+# components/Classes.pdb
+# components/Console.dll
+# components/Console.pdb
+# components/CustomModels.dll
+# components/Databases.dll
+# components/Databases.pdb
+# components/Dialogs.dll
+# components/Dialogs.pdb
+# components/Fixes.dll
+# components/Fixes.pdb
+# components/GangZones.dll
+# components/GangZones.pdb
+# components/LegacyConfig.dll
+# components/LegacyConfig.pdb
+# components/LegacyNetwork.dll
+# components/LegacyNetwork.pdb
+# components/Menus.dll
+# components/Menus.pdb
+# components/Objects.dll
+# components/Objects.pdb
+# components/Pawn.dll
+# components/Pawn.pdb
+# components/Pickups.dll
+# components/Pickups.pdb
+# components/Recordings.dll
+# components/Recordings.pdb
+# components/TextDraws.dll
+# components/TextDraws.pdb
+# components/TextLabels.dll
+# components/TextLabels.pdb
+# components/Timers.dll
+# components/Timers.pdb
+# components/Variables.dll
+# components/Variables.pdb
+# components/Vehicles.dll
+# components/Vehicles.pdb
 
 log.txt
-omp-server.exe
+# omp-server.exe
 omp-server.pdb
 
-qawno/include/amx
-qawno/include/code-parse
-qawno/include/indirection
-qawno/include/md-sort
-qawno/include/YSI
-qawno/include/YSI_Coding
-qawno/include/YSI_Visual
-qawno/include/YSI_Core
-qawno/include/YSI_Data
-qawno/include/YSI_Extra
-qawno/include/YSI_Game
-qawno/include/YSI_Players
-qawno/include/YSI_Server
-qawno/include/YSI_Storage
+# qawno/include/amx
+# qawno/include/code-parse
+# qawno/include/indirection
+# qawno/include/md-sort
+# qawno/include/YSI
+# qawno/include/YSI_Coding
+# qawno/include/YSI_Visual
+# qawno/include/YSI_Core
+# qawno/include/YSI_Data
+# qawno/include/YSI_Extra
+# qawno/include/YSI_Game
+# qawno/include/YSI_Players
+# qawno/include/YSI_Server
+# qawno/include/YSI_Storage
