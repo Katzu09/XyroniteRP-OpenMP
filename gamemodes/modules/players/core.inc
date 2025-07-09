@@ -1,0 +1,40 @@
+enum e_player_data
+{
+	pID,
+	pUCP[22],
+	pName[MAX_PLAYER_NAME],
+	Float:pPos[3],
+	pWorld,
+	pInterior,
+	pSkin,
+	pAge,
+	pAttempt,
+	pOrigin[32],
+	pGender,
+	bool:pMaskOn,
+	pMaskID,
+	bool:pSpawned,
+	pChar,
+	Float:pHealth,
+	pHunger,
+	pMoney,
+	pBank,
+	pInBiz,
+	pListitem,
+	pStorageSelect,
+	pAdmin,
+	pAduty,
+	pPhoneNumber,
+	pCalline,
+	pCredit,
+	pCalling,
+	pTarget,
+	pSkinPrice,
+	pVehKey,
+	pFaction,
+	pRenting,
+};
+
+new pData[MAX_PLAYERS][e_player_data];
+
+#include "modules\players\function"

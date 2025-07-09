@@ -469,7 +469,7 @@ enum EVF::VehicleData {
 	e_uptime
 };
 
-enum EVF::PlayerData {
+enum EVF::pData {
 	e_editor_vehicle
 	#if defined EVF_Streamer
 	,
@@ -930,7 +930,7 @@ new const EVF::NeonOffsetData[MAX_VEHICLE_MODELS][EVF::NeonOffset] = {
 
 new EVF::VehicleTrailerID[MAX_VEHICLES],
 	EVF::VehicleTempData[MAX_VEHICLES][EVF::VehicleData],
-	EVF::PlayerTempData[MAX_PLAYERS][EVF::PlayerData],
+	EVF::PlayerTempData[MAX_PLAYERS][EVF::pData],
 	EVF::ModShopStatus[MAX_PLAYERS];
 	
 #if defined EVF_Streamer

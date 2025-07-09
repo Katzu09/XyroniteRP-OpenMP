@@ -1,107 +1,47 @@
-/*	
-						 _____                    ____  ______
-						/__  /  ___  ____  ____  / __ \/ ____/
-						  / /  / _ \/ __ \/ __ \/ / / / /     
-						 / /__/  __/ / / / / / / /_/ / /___   
-						/____/\___/_/ /_/_/ /_/\____/\____/  
+#if defined DONT_REMOVE
 
-*/ ''
-/* Includes */
+    » Gamemode Xyronite by Luminouz
+    
+    > Credits: - LuminouZ (For the main Gamemode Scripter)
+               - Katzu (For porting the Gamemode from SA:MP to Open.MP)
+    
+    > NOTE: Please don't remove the credits!
+    
+    ===================== » Changelog ========================
+    
+    > Migrated entire gamemode from SA:MP to Open.MP (by Katzu)
+    
+#endif
+
+/* »Includes */
 #include <open.mp>
+#undef MAX_PLAYERS
+#define MAX_PLAYERS	100
 #include <a_mysql>
-#include <crashdetect>
-#include <YSI_Coding\y_va>
-#include <YSI_Coding\y_timers>
-#include <samp_bcrypt>
-#include <Pawn.CMD>
-#include <progress2>
 #include <sscanf2>
+#include <crashdetect>
+#include <YSI_Data\y_foreach>
+#include <Pawn.CMD>
+#include <Pawn.RakNet>
 #include <streamer>
+#include <samp_bcrypt>
+// #include <progress2>
+#include <YSI_Coding\y_timers>
+#include <easyDialog>
 
-/* Define & Macro */
-#define forex(%0,%1) for(new %0 = 0; %0 < %1; %0++)
+/* »Modulars */
+#include "modules\core\define"
+#include "modules\core\color"
+#include "modules\core\macro"
+#include "modules\database\core"
+#include "modules\utils\ui\core"
+#include "modules\core\data"
+#include "modules\core\function"
+#include "modules\players\core"
+#include "modules\vehicles\core"
+#include "modules\utils\timer"
 
-#define FUNC::%0(%1) forward %0(%1); public %0(%1)
-
-#define COLOR_YELLOW 			0xFFFF00FF
-#define COLOR_SERVER 			0x00FFFFFF
-#define COLOR_GREY   			0xAFAFAFFF
-#define COLOR_PURPLE 			0xD0AEEBFF
-#define COLOR_CLIENT 			0xC6E2FFFF
-#define COLOR_WHITE  			0xFFFFFFFF
-#define COLOR_LIGHTRED    		0xFF6347FF
-
-#define MAX_CHARS 3
-
-#define DATABASE_ADDRESS "localhost" //Change this to your Database Address
-#define DATABASE_USERNAME "root" // Change this to your database username
-#define DATABASE_PASSWORD "" //Change this to your database password
-#define DATABASE_NAME "omp-lv"
-
-#if !defined BCRYPT_HASH_LENGTH
-	#define BCRYPT_HASH_LENGTH 250
-#endif
-
-#if !defined BCRYPT_COST
-	#define BCRYPT_COST 12
-#endif
-
-#define SendServerMessage(%0,%1) \
-	SendClientMessageEx(%0, 0x00FFFFFF, "SERVER:{FFFFFF} "%1)
-
-#define SendSyntaxMessage(%0,%1) \
-	SendClientMessageEx(%0, COLOR_GREY, "USAGE:{FFFFFF} "%1)
-	
-#define SendErrorMessage(%0,%1) \
-	SendClientMessageEx(%0, COLOR_GREY, "ERROR: "%1)
-	
-#define MAX_PLAYER_VEHICLE 			100
-#define MAX_INVENTORY 				20
-#define MAX_BUSINESS                100
-#define MAX_DROPPED_ITEMS  			1000
-#define MAX_RENTAL                  20
-
-/* Variable */
-
-new MySQL:sqlcon;
-new g_RaceCheck[MAX_PLAYERS char];
-new PlayerChar[MAX_PLAYERS][MAX_CHARS][MAX_PLAYER_NAME + 1];
-new tempUCP[64];
-
-new PlayerText:ENERGYTD[MAX_PLAYERS][2];
-new PlayerBar:ENERGYBAR[MAX_PLAYERS];
-
-new PlayerText:SPEEDOTD[MAX_PLAYERS][4];
-new PlayerBar:FUELBAR[MAX_PLAYERS];
-new PlayerText:HEALTHTD[MAX_PLAYERS];
-new PlayerText:KMHTD[MAX_PLAYERS];
-new PlayerText:VEHNAMETD[MAX_PLAYERS];
-new PlayerText:MSGTD[MAX_PLAYERS];
-
-new g_aMaleSkins[] = {
-	1, 2, 3, 4, 5, 6, 7, 8, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
-	30, 32, 33, 34, 35, 36, 37, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 57, 58, 59, 60,
-	61, 62, 66, 68, 72, 73, 78, 79, 80, 81, 82, 83, 84, 94, 95, 96, 97, 98, 99, 100, 101, 102,
-	103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120,
-	121, 122, 123, 124, 125, 126, 127, 128, 132, 133, 134, 135, 136, 137, 142, 143, 144, 146,
-	147, 153, 154, 155, 156, 158, 159, 160, 161, 162, 167, 168, 170, 171, 173, 174, 175, 176,
-	177, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 200, 202, 203, 204, 206,
-	208, 209, 210, 212, 213, 217, 220, 221, 222, 223, 228, 229, 230, 234, 235, 236, 239, 240,
-	241, 242, 247, 248, 249, 250, 253, 254, 255, 258, 259, 260, 261, 262, 268, 272, 273, 289,
-	290, 291, 292, 293, 294, 295, 296, 297, 299
-};
-
-new g_aFemaleSkins[] = {
-    9, 10, 11, 12, 13, 31, 38, 39, 40, 41, 53, 54, 55, 56, 63, 64, 65, 69,
-    75, 76, 77, 85, 88, 89, 90, 91, 92, 93, 129, 130, 131, 138, 140, 141,
-    145, 148, 150, 151, 152, 157, 169, 178, 190, 191, 192, 193, 194, 195,
-    196, 197, 198, 199, 201, 205, 207, 211, 214, 215, 216, 219, 224, 225,
-    226, 231, 232, 233, 237, 238, 243, 244, 245, 246, 251, 256, 257, 263,
-    298
-};
-
-/* Enums */
-
+/* »Enums */
 enum e_faction
 {
 	FACTION_LSPD,
@@ -121,13 +61,11 @@ enum inventoryData
 
 new InventoryData[MAX_PLAYERS][MAX_INVENTORY][inventoryData];
 
-	
 enum e_InventoryItems
 {
 	e_InventoryItem[32],
 	e_InventoryModel
 };
-
 
 new const g_aInventoryItems[][e_InventoryItems] =
 {
@@ -139,13 +77,6 @@ new const g_aInventoryItems[][e_InventoryItems] =
 	{"Snack", 2768},
 	{"Water", 2958}
 };
-
-enum vCore
-{
-	vehFuel,
-};
-new VehCore[MAX_VEHICLES][vCore];
-	
 
 enum droppedItems
 {
@@ -164,103 +95,6 @@ enum droppedItems
 };
 
 new DroppedItems[MAX_DROPPED_ITEMS][droppedItems];
-
-enum vData
-{
-	vID,
-	vOwner,
-	vColor[2],
-	vModel,
-	vLocked,
-	vInsurance,
-	vInsuTime,
-	vPlate[16],
-	Float:vHealth,
-	Float:vPos[4],
-	vWorld,
-	vInterior,
-	vFuel,
-	vVehicle,
-	vDamage[4],
-	VEHICLE_PANEL_STATUS:vPanelDamage,
-    VEHICLE_DOOR_STATUS:vDoorDamage,
-    VEHICLE_LIGHT_STATUS:vLightDamage,
-    VEHICLE_TIRE_STATUS:vTireDamage,
-	bool:vExists,
-	vRental,
-	vRentTime,
-};
-new VehicleData[MAX_PLAYER_VEHICLE][vData];
-
-enum
-{
-	DIALOG_REGISTER,
-	DIALOG_LOGIN,
-	DIALOG_MAKECHAR,
-	DIALOG_ORIGIN,
-	DIALOG_AGE,
-	DIALOG_GENDER,
-	DIALOG_CHARLIST,
-	DIALOG_NONE,
-	DIALOG_BIZBUY,
-	DIALOG_INVENTORY,
-	DIALOG_GIVEITEM,
-	DIALOG_DROPITEM,
-	DIALOG_USEITEM,
-	DIALOG_GIVEAMOUNT,
-	DIALOG_INVACTION,
-	DIALOG_BUYSKINS,
-	DIALOG_INSURANCE,
-	DIALOG_BUYINSURANCE,
-	DIALOG_RENTAL,
-	DIALOG_RENTTIME,
-	DIALOG_BIZMENU,
-	DIALOG_BIZNAME,
-	DIALOG_BIZPROD,
-	DIALOG_BIZPRODSET,
-	DIALOG_BIZPRICE,
-	DIALOG_BIZPRICESET,
-	DIALOG_BIZCARGO
-};
-
-enum e_player_data
-{
-	pID,
-	pUCP[22],
-	pName[MAX_PLAYER_NAME],
-	Float:pPos[3],
-	pWorld,
-	pInterior,
-	pSkin,
-	pAge,
-	pAttempt,
-	pOrigin[32],
-	pGender,
-	bool:pMaskOn,
-	pMaskID,
-	bool:pSpawned,
-	pChar,
-	Float:pHealth,
-	pEnergy,
-	pMoney,
-	pBank,
-	pInBiz,
-	pListitem,
-	pStorageSelect,
-	pAdmin,
-	pAduty,
-	pPhoneNumber,
-	pCalline,
-	pCredit,
-	pCalling,
-	pTarget,
-	pSkinPrice,
-	pVehKey,
-	pFaction,
-	pRenting,
-};
-
-new PlayerData[MAX_PLAYERS][e_player_data];
 
 enum e_biz_data
 {
@@ -308,93 +142,56 @@ new RentData[MAX_RENTAL][e_rental];
 
 /* Functions */
 
-stock GetElapsedTime(time, &hours, &minutes, &seconds)
-{
-	hours = 0;
-	minutes = 0;
-	// seconds = 0;
-
-	if (time >= 3600)
-	{
-		hours = (time / 3600);
-		time -= (hours * 3600);
-	}
-	while (time >= 60)
-	{
-	    minutes++;
-	    time -= 60;
-	}
-	return (seconds = time);
-}
-
-stock ShowMessage(playerid, const string[], time)//Time in Sec.
-{
-	new validtime = time*1000;
-
-	PlayerTextDrawSetString(playerid, MSGTD[playerid], string);
-	PlayerTextDrawShow(playerid, MSGTD[playerid]);
-	SetTimerEx("HideMessage", validtime, false, "d", playerid);
-	return 1;
-}
-
-FUNC::HideMessage(playerid)
-{
-	return PlayerTextDrawHide(playerid, MSGTD[playerid]);
-}
-
 stock Biz_GetCount(playerid)
 {
 	new count = 0;
-	forex(i, MAX_BUSINESS) if(BizData[i][bizExists] && BizData[i][bizOwner] == PlayerData[playerid][pID])
+	forex(i, MAX_BUSINESS) if(BizData[i][bizExists] && BizData[i][bizOwner] == pData[playerid][pID])
 	{
 	    count++;
 	}
 	return count;
 }
 
-stock RandomEx(min, max)
-{
-	new rand = random(max-min)+min;
-	return rand;
-}
-
-stock UpdatePlayerSkin(playerid, skinid)
-{
-	SetPlayerSkin(playerid, skinid);
-	PlayerData[playerid][pSkin] = skinid;
-}
-
 stock StreamerConfig()
 {
-	Streamer_MaxItems(STREAMER_TYPE_OBJECT, 990000);
-	Streamer_MaxItems(STREAMER_TYPE_MAP_ICON, 2000);
-	Streamer_MaxItems(STREAMER_TYPE_PICKUP, 2000);
-	for(new playerid = (GetMaxPlayers() - 1); playerid != -1; playerid--)
-	{
-		Streamer_DestroyAllVisibleItems(playerid, 0);
-	}
-	Streamer_VisibleItems(STREAMER_TYPE_OBJECT, 1000);
-	return 1;
+    Streamer_MaxItems(STREAMER_TYPE_OBJECT, 990000);
+    Streamer_MaxItems(STREAMER_TYPE_MAP_ICON, 2000);
+    Streamer_MaxItems(STREAMER_TYPE_PICKUP, 2000);
+
+    SetTimer("DestroyStreamerItems", 100, false);
+
+    Streamer_VisibleItems(STREAMER_TYPE_OBJECT, 1000);
+    return 1;
 }
+
+forward DestroyStreamerItems();
+public DestroyStreamerItems()
+{
+    for (new playerid = 0; playerid < GetMaxPlayers(); playerid++) 
+    {
+        Streamer_DestroyAllVisibleItems(playerid, 0);
+    }
+}
+
 
 FUNC::OnPlayerUseItem(playerid, itemid, const name[])
 {
 	if(!strcmp(name, "Snack"))
 	{
-        if (PlayerData[playerid][pEnergy] > 90)
+        if (pData[playerid][pHunger] > 90)
             return SendErrorMessage(playerid, "Energy milikmu sudah penuh.");
 
-        PlayerData[playerid][pEnergy] += 10;
+        pData[playerid][pHunger] += 10;
 		Inventory_Remove(playerid, "Snack", 1);
 		ApplyAnimation(playerid, "FOOD", "EAT_Burger", 4.1, false, false, false, false, 0, SYNC_ALL);
         SendNearbyMessage(playerid, 30.0, COLOR_PURPLE, "* %s takes a snack and eats it.", ReturnName(playerid));
 	}
 	else if(!strcmp(name, "Water"))
 	{
-        if (PlayerData[playerid][pEnergy] > 90)
+        if (pData[playerid][pHunger] > 90)
             return SendErrorMessage(playerid, "Energy milikmu sudah penuh.");
 
-        PlayerData[playerid][pEnergy] += 10;
+        pData[playerid][pHunger] += 10;
 		Inventory_Remove(playerid, "Water", 1);
         SendNearbyMessage(playerid, 30.0, COLOR_PURPLE, "* %s takes a water mineral and drinks it.", ReturnName(playerid));
 	}
@@ -443,7 +240,7 @@ stock Inventory_Clear(playerid)
 	        InventoryData[playerid][i][invQuantity] = 0;
 		}
 	}
-	format(string, sizeof(string), "DELETE FROM `inventory` WHERE `ID` = '%d'", PlayerData[playerid][pID]);
+	format(string, sizeof(string), "DELETE FROM `inventory` WHERE `ID` = '%d'", pData[playerid][pID]);
 	return mysql_tquery(sqlcon, string);
 }
 
@@ -521,7 +318,7 @@ stock Inventory_SetQuantity(playerid, const item[], quantity)
 
 	if (itemid != -1)
 	{
-	    format(string, sizeof(string), "UPDATE `inventory` SET `invQuantity` = %d WHERE `ID` = '%d' AND `invID` = '%d'", quantity, PlayerData[playerid][pID], InventoryData[playerid][itemid][invID]);
+	    format(string, sizeof(string), "UPDATE `inventory` SET `invQuantity` = %d WHERE `ID` = '%d' AND `invID` = '%d'", quantity, pData[playerid][pID], InventoryData[playerid][itemid][invID]);
 	    mysql_tquery(sqlcon, string);
 
 	    InventoryData[playerid][itemid][invQuantity] = quantity;
@@ -547,12 +344,12 @@ stock Inventory_Remove(playerid, const item[], quantity = 1)
 		    InventoryData[playerid][itemid][invModel] = 0;
 		    InventoryData[playerid][itemid][invQuantity] = 0;
 
-		    format(string, sizeof(string), "DELETE FROM `inventory` WHERE `ID` = '%d' AND `invID` = '%d'", PlayerData[playerid][pID], InventoryData[playerid][itemid][invID]);
+		    format(string, sizeof(string), "DELETE FROM `inventory` WHERE `ID` = '%d' AND `invID` = '%d'", pData[playerid][pID], InventoryData[playerid][itemid][invID]);
 	        mysql_tquery(sqlcon, string);
 		}
 		else if (quantity != -1 && InventoryData[playerid][itemid][invQuantity] > 0)
 		{
-			format(string, sizeof(string), "UPDATE `inventory` SET `invQuantity` = `invQuantity` - %d WHERE `ID` = '%d' AND `invID` = '%d'", quantity, PlayerData[playerid][pID], InventoryData[playerid][itemid][invID]);
+			format(string, sizeof(string), "UPDATE `inventory` SET `invQuantity` = `invQuantity` - %d WHERE `ID` = '%d' AND `invID` = '%d'", quantity, pData[playerid][pID], InventoryData[playerid][itemid][invID]);
             mysql_tquery(sqlcon, string);
 		}
 		return 1;
@@ -578,7 +375,7 @@ stock Inventory_Add(playerid, const item[], model, quantity = 1)
 
 	        strpack(InventoryData[playerid][itemid][invItem], item, 32 char);
 
-			format(string, sizeof(string), "INSERT INTO `inventory` (`ID`, `invItem`, `invModel`, `invQuantity`) VALUES('%d', '%s', '%d', '%d')", PlayerData[playerid][pID], item, model, quantity);
+			format(string, sizeof(string), "INSERT INTO `inventory` (`ID`, `invItem`, `invModel`, `invQuantity`) VALUES('%d', '%s', '%d', '%d')", pData[playerid][pID], item, model, quantity);
 			mysql_tquery(sqlcon, string, "OnInventoryAdd", "dd", playerid, itemid);
 	        return itemid;
 		}
@@ -586,7 +383,7 @@ stock Inventory_Add(playerid, const item[], model, quantity = 1)
 	}
 	else
 	{
-	    format(string, sizeof(string), "UPDATE `inventory` SET `invQuantity` = `invQuantity` + %d WHERE `ID` = '%d' AND `invID` = '%d'", quantity, PlayerData[playerid][pID], InventoryData[playerid][itemid][invID]);
+	    format(string, sizeof(string), "UPDATE `inventory` SET `invQuantity` = `invQuantity` + %d WHERE `ID` = '%d' AND `invID` = '%d'", quantity, pData[playerid][pID], InventoryData[playerid][itemid][invID]);
 	    mysql_tquery(sqlcon, string);
 
 	    InventoryData[playerid][itemid][invQuantity] += quantity;
@@ -746,21 +543,6 @@ FUNC::LoadPlayerItems(playerid)
 	return 1;
 }
 
-GiveMoney(playerid, amount)
-{
-	PlayerData[playerid][pMoney] += amount;
-	GivePlayerMoney(playerid, amount);
-	return 1;
-}
-
-stock GetEnergy(playerid)
-	return PlayerData[playerid][pEnergy];
-	
-stock GetMoney(playerid)
-{
-	return PlayerData[playerid][pMoney];
-}
-
 stock Rental_Create(playerid, veh1, veh2)
 {
 	new
@@ -874,7 +656,7 @@ stock Biz_IsOwner(playerid, id)
 	if(!BizData[id][bizExists])
 	    return 0;
 	    
-	if(BizData[id][bizOwner] == PlayerData[playerid][pID])
+	if(BizData[id][bizOwner] == pData[playerid][pID])
 		return 1;
 		
 	return 0;
@@ -1070,665 +852,14 @@ FUNC::Business_Refresh(bizid)
 	return 1;
 }
 
-stock Vehicle_GetID(vehicleid)
-{
-	forex(i, MAX_PLAYER_VEHICLE) if (VehicleData[i][vExists] && VehicleData[i][vVehicle] == vehicleid)
-	{
-	    return i;
-	}
-	return -1;
-}
-
-stock Vehicle_Count(playerid)
-{
-	new count = 0;
-	forex(i, MAX_PLAYER_VEHICLE) if(VehicleData[i][vExists] && VehicleData[i][vOwner] == PlayerData[playerid][pID])
-	{
-	    count++;
-	}
-	return count;
-}
-
 stock VehicleRental_Count(playerid)
 {
 	new count = 0;
-	forex(i, MAX_PLAYER_VEHICLE) if(VehicleData[i][vExists] && VehicleData[i][vRental] != -1 && VehicleData[i][vOwner] == PlayerData[playerid][pID])
+	forex(i, MAX_PLAYER_VEHICLE) if(VehicleData[i][vExists] && VehicleData[i][vRental] != -1 && VehicleData[i][vOwner] == pData[playerid][pID])
 	{
 	    count++;
 	}
 	return count;
-}
-
-stock Vehicle_Inside(playerid)
-{
-	new carid;
-
-	if (IsPlayerInAnyVehicle(playerid) && (carid = Vehicle_GetID(GetPlayerVehicleID(playerid))) != -1)
-	    return carid;
-
-	return -1;
-}
-stock SetPlayerPosEx(playerid, Float:x, Float:y, Float:z)
-{
-	TogglePlayerControllable(playerid, false);
-	SetPlayerPos(playerid, x, y, z);
-	SetTimerEx("UnFreeze", 2000, false, "d", playerid);
-}
-
-FUNC::UnFreeze(playerid)
-{
-    TogglePlayerControllable(playerid, true);
-}
-stock ConvertHBEColor(value)
-{
-    new color;
-    if(value >= 90 && value <= 100)
-        color = 0x15a014FF;
-    else if(value >= 80 && value < 90)
-        color = 0x1b9913FF;
-    else if(value >= 70 && value < 80)
-        color = 0x1a7f08FF;
-    else if(value >= 60 && value < 70)
-        color = 0x326305FF;
-    else if(value >= 50 && value < 60)
-        color = 0x375d04FF;
-    else if(value >= 40 && value < 50)
-        color = 0x603304FF;
-    else if(value >= 30 && value < 40)
-        color = 0xd72800FF;
-    else if(value >= 10 && value < 30)
-        color = 0xfb3508FF;
-    else if(value >= 0 && value < 10)
-        color = 0xFF0000FF;
-    else
-        color = 0x15a014FF;
-
-    return color;
-}
-
-stock ShowText(playerid, const text[], time)
-{
-	new total = time * 1000;
-	new str[256];
-	format(str, sizeof(str), "%s", text);
-	GameTextForPlayer(playerid, str, total, 5);
-	return 1;
-}
-
-new g_arrVehicleNames[][] = {
-    "Landstalker", "Bravura", "Buffalo", "Linerunner", "Perrenial", "Sentinel", "Dumper", "Firetruck", "Trashmaster",
-    "Stretch", "Manana", "Infernus", "Voodoo", "Pony", "Mule", "Cheetah", "Ambulance", "Leviathan", "Moonbeam",
-    "Esperanto", "Taxi", "Washington", "Bobcat", "Whoopee", "BF Injection", "Hunter", "Premier", "Enforcer",
-    "Securicar", "Banshee", "Predator", "Bus", "Rhino", "Barracks", "Hotknife", "Trailer", "Previon", "Coach",
-    "Cabbie", "Stallion", "Rumpo", "RC Bandit", "Romero", "Packer", "Monster", "Admiral", "Squalo", "Seasparrow",
-    "Pizzaboy", "Tram", "Trailer", "Turismo", "Speeder", "Reefer", "Tropic", "Flatbed", "Yankee", "Caddy", "Solair",
-    "Berkley's RC Van", "Skimmer", "PCJ-600", "Faggio", "Freeway", "RC Baron", "RC Raider", "Glendale", "Oceanic",
-    "Sanchez", "Sparrow", "Patriot", "Quad", "Coastguard", "Dinghy", "Hermes", "Sabre", "Rustler", "ZR-350", "Walton",
-    "Regina", "Comet", "BMX", "Burrito", "Camper", "Marquis", "Baggage", "Dozer", "Maverick", "News Chopper", "Rancher",
-    "FBI Rancher", "Virgo", "Greenwood", "Jetmax", "Hotring", "Sandking", "Blista Compact", "Police Maverick",
-    "Boxville", "Benson", "Mesa", "RC Goblin", "Hotring Racer A", "Hotring Racer B", "Bloodring Banger", "Rancher",
-    "Super GT", "Elegant", "Journey", "Bike", "Mountain Bike", "Beagle", "Cropduster", "Stunt", "Tanker", "Roadtrain",
-    "Nebula", "Majestic", "Buccaneer", "Shamal", "Hydra", "FCR-900", "NRG-500", "HPV1000", "Cement Truck", "Tow Truck",
-    "Fortune", "Cadrona", "SWAT Truck", "Willard", "Forklift", "Tractor", "Combine", "Feltzer", "Remington", "Slamvan",
-    "Blade", "Streak", "Freight", "Vortex", "Vincent", "Bullet", "Clover", "Sadler", "Firetruck", "Hustler", "Intruder",
-    "Primo", "Cargobob", "Tampa", "Sunrise", "Merit", "Utility", "Nevada", "Yosemite", "Windsor", "Monster", "Monster",
-    "Uranus", "Jester", "Sultan", "Stratum", "Elegy", "Raindance", "RC Tiger", "Flash", "Tahoma", "Savanna", "Bandito",
-    "Freight Flat", "Streak Carriage", "Kart", "Mower", "Dune", "Sweeper", "Broadway", "Tornado", "AT-400", "DFT-30",
-    "Huntley", "Stafford", "BF-400", "News Van", "Tug", "Trailer", "Emperor", "Wayfarer", "Euros", "Hotdog", "Club",
-    "Freight Box", "Trailer", "Andromada", "Dodo", "RC Cam", "Launch", "LSPD", "SFPD", "LVPD",
-    "Police Rancher", "Picador", "S.W.A.T", "Alpha", "Phoenix", "Glendale", "Sadler", "Luggage", "Luggage", "Stairs",
-    "Boxville", "Tiller", "Utility Trailer"
-};
-
-
-GetVehicleModelByName(const name[])
-{
-	if(IsNumeric(name) && (strval(name) >= 400 && strval(name) <= 611))
-		return strval(name);
-
-	for (new i = 0; i < sizeof(g_arrVehicleNames); i ++)
-	{
-		if(strfind(g_arrVehicleNames[i], name, true) != -1)
-		{
-			return i + 400;
-		}
-	}
-	return 0;
-}
-
-ReturnVehicleModelName(model)
-{
-	new
-	    name[32] = "None";
-
-    if (model < 400 || model > 611)
-	    return name;
-
-	format(name, sizeof(name), g_arrVehicleNames[model - 400]);
-	return name;
-}
-
-stock GetVehicleSpeedKMH(vehicleid)
-{
-	new Float:speed_x, Float:speed_y, Float:speed_z, Float:temp_speed, round_speed;
-	GetVehicleVelocity(vehicleid, speed_x, speed_y, speed_z);
-
-	temp_speed = floatsqroot(((speed_x*speed_x) + (speed_y*speed_y)) + (speed_z*speed_z)) * 136.666667;
-
-	round_speed = floatround(temp_speed);
-	return round_speed;
-}
-
-stock GetFuel(vehicleid)
-{
-	return VehCore[vehicleid][vehFuel];
-}
-GetEngineStatus(vehicleid)
-{
-	static
-	engine,
-	lights,
-	alarm,
-	doors,
-	bonnet,
-	boot,
-	objective;
-
-	GetVehicleParamsEx(vehicleid, engine, lights, alarm, doors, bonnet, boot, objective);
-
-	if(engine != 1)
-		return 0;
-
-	return 1;
-}
-
-stock CreatePlayerHUD(playerid)
-{
-	/* Energy */
-	ENERGYTD[playerid][0] = CreatePlayerTextDraw(playerid, 571.000000, 134.000000, "_");
-	PlayerTextDrawFont(playerid, ENERGYTD[playerid][0], TEXT_DRAW_FONT_1);
-	PlayerTextDrawLetterSize(playerid, ENERGYTD[playerid][0], 0.595833, 4.250002);
-	PlayerTextDrawTextSize(playerid, ENERGYTD[playerid][0], 298.500000, 75.000000);
-	PlayerTextDrawSetOutline(playerid, ENERGYTD[playerid][0], 1);
-	PlayerTextDrawSetShadow(playerid, ENERGYTD[playerid][0], 0);
-	PlayerTextDrawAlignment(playerid, ENERGYTD[playerid][0], TEXT_DRAW_ALIGN_CENTRE);
-	PlayerTextDrawColour(playerid, ENERGYTD[playerid][0], -1);
-	PlayerTextDrawBackgroundColour(playerid, ENERGYTD[playerid][0], 255);
-	PlayerTextDrawBoxColour(playerid, ENERGYTD[playerid][0], 135);
-	PlayerTextDrawUseBox(playerid, ENERGYTD[playerid][0], true);
-	PlayerTextDrawSetProportional(playerid, ENERGYTD[playerid][0], true);
-	PlayerTextDrawSetSelectable(playerid, ENERGYTD[playerid][0], false);
-
-	ENERGYTD[playerid][1] = CreatePlayerTextDraw(playerid, 547.000000, 136.000000, "ENERGY");
-	PlayerTextDrawFont(playerid, ENERGYTD[playerid][1], TEXT_DRAW_FONT_1);
-	PlayerTextDrawLetterSize(playerid, ENERGYTD[playerid][1], 0.412499, 1.549999);
-	PlayerTextDrawTextSize(playerid, ENERGYTD[playerid][1], 400.000000, 17.000000);
-	PlayerTextDrawSetOutline(playerid, ENERGYTD[playerid][1], 0);
-	PlayerTextDrawSetShadow(playerid, ENERGYTD[playerid][1], 0);
-	PlayerTextDrawAlignment(playerid, ENERGYTD[playerid][1], TEXT_DRAW_ALIGN_LEFT);
-	PlayerTextDrawColour(playerid, ENERGYTD[playerid][1], -168436481);
-	PlayerTextDrawBackgroundColour(playerid, ENERGYTD[playerid][1], 255);
-	PlayerTextDrawBoxColour(playerid, ENERGYTD[playerid][1], 50);
-	PlayerTextDrawUseBox(playerid, ENERGYTD[playerid][1], false);
-	PlayerTextDrawSetProportional(playerid, ENERGYTD[playerid][1], true);
-	PlayerTextDrawSetSelectable(playerid, ENERGYTD[playerid][1], false);
-	
-	/* Speedometer */
-	SPEEDOTD[playerid][0] = CreatePlayerTextDraw(playerid, 572.000000, 372.000000, "_");
-	PlayerTextDrawFont(playerid, SPEEDOTD[playerid][0], TEXT_DRAW_FONT_1);
-	PlayerTextDrawLetterSize(playerid, SPEEDOTD[playerid][0], 0.600000, 8.300003);
-	PlayerTextDrawTextSize(playerid, SPEEDOTD[playerid][0], 298.500000, 135.000000);
-	PlayerTextDrawSetOutline(playerid, SPEEDOTD[playerid][0], 1);
-	PlayerTextDrawSetShadow(playerid, SPEEDOTD[playerid][0], 0);
-	PlayerTextDrawAlignment(playerid, SPEEDOTD[playerid][0], TEXT_DRAW_ALIGN_CENTRE);
-	PlayerTextDrawColour(playerid, SPEEDOTD[playerid][0], -1);
-	PlayerTextDrawBackgroundColour(playerid, SPEEDOTD[playerid][0], 255);
-	PlayerTextDrawBoxColour(playerid, SPEEDOTD[playerid][0], 135);
-	PlayerTextDrawUseBox(playerid, SPEEDOTD[playerid][0], false);
-	PlayerTextDrawSetProportional(playerid, SPEEDOTD[playerid][0], true);
-	PlayerTextDrawSetSelectable(playerid, SPEEDOTD[playerid][0], false);
-
-	SPEEDOTD[playerid][1] = CreatePlayerTextDraw(playerid, 519.000000, 412.000000, "FUEL:");
-	PlayerTextDrawFont(playerid, SPEEDOTD[playerid][1], TEXT_DRAW_FONT_2);
-	PlayerTextDrawLetterSize(playerid, SPEEDOTD[playerid][1], 0.287500, 1.350000);
-	PlayerTextDrawTextSize(playerid, SPEEDOTD[playerid][1], 400.000000, 17.000000);
-	PlayerTextDrawSetOutline(playerid, SPEEDOTD[playerid][1], 0);
-	PlayerTextDrawSetShadow(playerid, SPEEDOTD[playerid][1], 0);
-	PlayerTextDrawAlignment(playerid, SPEEDOTD[playerid][1], TEXT_DRAW_ALIGN_LEFT);
-	PlayerTextDrawColour(playerid, SPEEDOTD[playerid][1], -1061109505);
-	PlayerTextDrawBackgroundColour(playerid, SPEEDOTD[playerid][1], 255);
-	PlayerTextDrawBoxColour(playerid, SPEEDOTD[playerid][1], 50);
-	PlayerTextDrawUseBox(playerid, SPEEDOTD[playerid][1], false);
-	PlayerTextDrawSetProportional(playerid, SPEEDOTD[playerid][1], true);
-	PlayerTextDrawSetSelectable(playerid, SPEEDOTD[playerid][1], false);
-
-	SPEEDOTD[playerid][2] = CreatePlayerTextDraw(playerid, 519.000000, 396.000000, "HEALTH:");
-	PlayerTextDrawFont(playerid, SPEEDOTD[playerid][2], TEXT_DRAW_FONT_2);
-	PlayerTextDrawLetterSize(playerid, SPEEDOTD[playerid][2], 0.287500, 1.350000);
-	PlayerTextDrawTextSize(playerid, SPEEDOTD[playerid][2], 400.000000, 17.000000);
-	PlayerTextDrawSetOutline(playerid, SPEEDOTD[playerid][2], 0);
-	PlayerTextDrawSetShadow(playerid, SPEEDOTD[playerid][2], 0);
-	PlayerTextDrawAlignment(playerid, SPEEDOTD[playerid][2], TEXT_DRAW_ALIGN_LEFT);
-	PlayerTextDrawColour(playerid, SPEEDOTD[playerid][2], -1061109505);
-	PlayerTextDrawBackgroundColour(playerid, SPEEDOTD[playerid][2], 255);
-	PlayerTextDrawBoxColour(playerid, SPEEDOTD[playerid][2], 50);
-	PlayerTextDrawUseBox(playerid, SPEEDOTD[playerid][2], false);
-	PlayerTextDrawSetProportional(playerid, SPEEDOTD[playerid][2], true);
-	PlayerTextDrawSetSelectable(playerid, SPEEDOTD[playerid][2], false);
-
-	HEALTHTD[playerid] = CreatePlayerTextDraw(playerid, 572.000000, 396.000000, "--");
-	PlayerTextDrawFont(playerid, HEALTHTD[playerid], TEXT_DRAW_FONT_2);
-	PlayerTextDrawLetterSize(playerid, HEALTHTD[playerid], 0.287500, 1.350000);
-	PlayerTextDrawTextSize(playerid, HEALTHTD[playerid], 400.000000, 17.000000);
-	PlayerTextDrawSetOutline(playerid, HEALTHTD[playerid], 0);
-	PlayerTextDrawSetShadow(playerid, HEALTHTD[playerid], 0);
-	PlayerTextDrawAlignment(playerid, HEALTHTD[playerid], TEXT_DRAW_ALIGN_LEFT);
-	PlayerTextDrawColour(playerid, HEALTHTD[playerid], -1061109505);
-	PlayerTextDrawBackgroundColour(playerid, HEALTHTD[playerid], 255);
-	PlayerTextDrawBoxColour(playerid, HEALTHTD[playerid], 50);
-	PlayerTextDrawUseBox(playerid, HEALTHTD[playerid], false);
-	PlayerTextDrawSetProportional(playerid, HEALTHTD[playerid], true);
-	PlayerTextDrawSetSelectable(playerid, HEALTHTD[playerid], false);
-
-	SPEEDOTD[playerid][3] = CreatePlayerTextDraw(playerid, 519.000000, 380.000000, "SPEED:");
-	PlayerTextDrawFont(playerid, SPEEDOTD[playerid][3], TEXT_DRAW_FONT_2);
-	PlayerTextDrawLetterSize(playerid, SPEEDOTD[playerid][3], 0.287500, 1.350000);
-	PlayerTextDrawTextSize(playerid, SPEEDOTD[playerid][3], 400.000000, 17.000000);
-	PlayerTextDrawSetOutline(playerid, SPEEDOTD[playerid][3], 0);
-	PlayerTextDrawSetShadow(playerid, SPEEDOTD[playerid][3], 0);
-	PlayerTextDrawAlignment(playerid, SPEEDOTD[playerid][3], TEXT_DRAW_ALIGN_LEFT);
-	PlayerTextDrawColour(playerid, SPEEDOTD[playerid][3], -1061109505);
-	PlayerTextDrawBackgroundColour(playerid, SPEEDOTD[playerid][3], 255);
-	PlayerTextDrawBoxColour(playerid, SPEEDOTD[playerid][3], 50);
-	PlayerTextDrawUseBox(playerid, SPEEDOTD[playerid][3], false);
-	PlayerTextDrawSetProportional(playerid, SPEEDOTD[playerid][3], true);
-	PlayerTextDrawSetSelectable(playerid, SPEEDOTD[playerid][3], false);
-
-	KMHTD[playerid] = CreatePlayerTextDraw(playerid, 572.000000, 379.000000, "--");
-	PlayerTextDrawFont(playerid, KMHTD[playerid], TEXT_DRAW_FONT_2);
-	PlayerTextDrawLetterSize(playerid, KMHTD[playerid], 0.287500, 1.350000);
-	PlayerTextDrawTextSize(playerid, KMHTD[playerid], 400.000000, 17.000000);
-	PlayerTextDrawSetOutline(playerid, KMHTD[playerid], 0);
-	PlayerTextDrawSetShadow(playerid, KMHTD[playerid], 0);
-	PlayerTextDrawAlignment(playerid, KMHTD[playerid], TEXT_DRAW_ALIGN_LEFT);
-	PlayerTextDrawColour(playerid, KMHTD[playerid], -1061109505);
-	PlayerTextDrawBackgroundColour(playerid, KMHTD[playerid], 255);
-	PlayerTextDrawBoxColour(playerid, KMHTD[playerid], 50);
-	PlayerTextDrawUseBox(playerid, KMHTD[playerid], false);
-	PlayerTextDrawSetProportional(playerid, KMHTD[playerid], true);
-	PlayerTextDrawSetSelectable(playerid, KMHTD[playerid], false);
-
-	VEHNAMETD[playerid] = CreatePlayerTextDraw(playerid, 519.000000, 362.000000, "--");
-	PlayerTextDrawFont(playerid, VEHNAMETD[playerid], TEXT_DRAW_FONT_0);
-	PlayerTextDrawLetterSize(playerid, VEHNAMETD[playerid], 0.408333, 1.500000);
-	PlayerTextDrawTextSize(playerid, VEHNAMETD[playerid], 400.000000, 17.000000);
-	PlayerTextDrawSetOutline(playerid, VEHNAMETD[playerid], 1);
-	PlayerTextDrawSetShadow(playerid, VEHNAMETD[playerid], 0);
-	PlayerTextDrawAlignment(playerid, VEHNAMETD[playerid], TEXT_DRAW_ALIGN_LEFT);
-	PlayerTextDrawColour(playerid, VEHNAMETD[playerid], -1061109505);
-	PlayerTextDrawBackgroundColour(playerid, VEHNAMETD[playerid], 255);
-	PlayerTextDrawBoxColour(playerid, VEHNAMETD[playerid], 50);
-	PlayerTextDrawUseBox(playerid, VEHNAMETD[playerid], false);
-	PlayerTextDrawSetProportional(playerid, VEHNAMETD[playerid], false);
-	PlayerTextDrawSetSelectable(playerid, VEHNAMETD[playerid], false);
-}
-
-stock CreateGlobalTextDraw()
-{
-
-}
-FormatNumber(number, const prefix[] = "$")
-{
-	static
-		value[32],
-		length;
-
-	format(value, sizeof(value), "%d", (number < 0) ? (-number) : (number));
-
-	if ((length = strlen(value)) > 3)
-	{
-		for (new i = length, l = 0; --i >= 0; l ++) {
-		    if ((l > 0) && (l % 3 == 0)) strins(value, ",", i + 1);
-		}
-	}
-	if (prefix[0] != 0)
-	    strins(value, prefix, 0);
-
-	if (number < 0)
-		strins(value, "-", 0);
-
-	return value;
-}
-
-stock KickEx(playerid)
-{
-	SaveData(playerid);
-	SetTimerEx("KickTimer", 1000, false, "d", playerid);
-}
-
-FUNC::KickTimer(playerid)
-{
-	Kick(playerid);
-}
-
-FUNC::OnPlayerVehicleCreated(carid)
-{
-	if (carid == -1 || !VehicleData[carid][vExists])
-	    return 0;
-
-	VehicleData[carid][vID] = cache_insert_id();
-	VehicleData[carid][vExists] = true;
-	SaveVehicle(carid);
-	return 1;
-}
-
-FUNC::Vehicle_GetStatus(carid)
-{
-	if(VehicleData[carid][vVehicle] != INVALID_VEHICLE_ID)
-	{
-		GetVehicleDamageStatus(VehicleData[carid][vVehicle], VehicleData[carid][vPanelDamage], VehicleData[carid][vDoorDamage], VehicleData[carid][vLightDamage], VehicleData[carid][vTireDamage]);
-
-		GetVehicleHealth(VehicleData[carid][vVehicle], VehicleData[carid][vHealth]);
-		VehicleData[carid][vFuel] = VehCore[VehicleData[carid][vVehicle]][vehFuel];
-		VehicleData[carid][vWorld] = GetVehicleVirtualWorld(VehicleData[carid][vVehicle]);
-
-		GetVehiclePos(VehicleData[carid][vVehicle], VehicleData[carid][vPos][0], VehicleData[carid][vPos][1], VehicleData[carid][vPos][2]);
-		GetVehicleZAngle(VehicleData[carid][vVehicle],VehicleData[carid][vPos][3]);
-
-	}
-	return 1;
-}
-
-stock Vehicle_IsOwner(playerid, carid)
-{
-	if(PlayerData[playerid][pID] == -1)
-		return 0;
-
-	if(VehicleData[carid][vExists] && VehicleData[carid][vOwner] == PlayerData[playerid][pID])
-		return 1;
-
-	return 0;
-}
-
-stock Vehicle_HaveAccess(playerid, carid)
-{
-	if(PlayerData[playerid][pID] == -1)
-		return 0;
-
-	if(VehicleData[carid][vExists] && VehicleData[carid][vOwner] == PlayerData[playerid][pID] || PlayerData[playerid][pVehKey] == VehicleData[carid][vID])
-		return 1;
-
-	return 0;
-}
-FUNC::UnloadPlayerVehicle(playerid)
-{
- 	forex(i,MAX_PLAYER_VEHICLE) if(VehicleData[i][vExists])
-	{
-		if(VehicleData[i][vOwner] == PlayerData[playerid][pID])
-		{
-		    Vehicle_GetStatus(i);
-		    
-			new cQuery[2512];
-			mysql_format(sqlcon, cQuery, sizeof(cQuery), "UPDATE `vehicle` SET ");
-			mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehX`='%f', ", cQuery, VehicleData[i][vPos][0]);
-			mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehY`='%f', ", cQuery, VehicleData[i][vPos][1]);
-			mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehZ`='%f', ", cQuery, VehicleData[i][vPos][2]+0.1);
-			mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehA`='%f', ", cQuery, VehicleData[i][vPos][3]);
-			mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehOwner`='%d', ", cQuery, VehicleData[i][vOwner]);
-			mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehModel`='%d', ", cQuery, VehicleData[i][vModel]);
-            mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehColor1`='%d', ", cQuery, VehicleData[i][vColor][0]);
-            mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehColor2`='%d', ", cQuery, VehicleData[i][vColor][1]);
-            mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehHealth`='%f', ", cQuery, VehicleData[i][vHealth]);
-            mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehPanelDamage`='%d', ", cQuery, VehicleData[i][vPanelDamage]);
-			mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehDoorDamage`='%d', ", cQuery, VehicleData[i][vDoorDamage]);
-			mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehLightDamage`='%d', ", cQuery, VehicleData[i][vLightDamage]);
-			mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehTireDamage`='%d', ", cQuery, VehicleData[i][vTireDamage]);
-            mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehInterior`='%d', ", cQuery, VehicleData[i][vInterior]);
-            mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehWorld`='%d', ", cQuery, VehicleData[i][vWorld]);
-            mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehFuel`='%d', ", cQuery, VehicleData[i][vFuel]);
-            mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehPlate`='%s', ", cQuery, VehicleData[i][vPlate]);
-		    mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehRental`='%d', ", cQuery, VehicleData[i][vRental]);
-		    mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehRentalTime`='%d', ", cQuery, VehicleData[i][vRentTime]);
-            mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehLocked`='%d', ", cQuery, VehicleData[i][vLocked]);
-            mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehInsurance`='%d', ", cQuery, VehicleData[i][vInsurance]);
-            mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehInsuTime`='%d' ", cQuery, VehicleData[i][vInsuTime]);
-			mysql_format(sqlcon, cQuery, sizeof(cQuery), "%sWHERE `vehID` = %d", cQuery, VehicleData[i][vID]);
-			mysql_query(sqlcon, cQuery, true);
-
-
-			if(VehicleData[i][vVehicle] != INVALID_VEHICLE_ID)
-			{
-				DestroyVehicle(VehicleData[i][vVehicle]);
-			}
-			VehicleData[i][vExists] = false;
-			
-		}
-	}
-	return 1;
-}
-
-stock VehicleRental_Create(ownerid, modelid, Float:x, Float:y, Float:z, Float:angle, time, rentid)
-{
-    forex(i, MAX_PLAYER_VEHICLE)
-	{
-		if (!VehicleData[i][vExists])
-   		{
-   		    VehicleData[i][vExists] = true;
-
-            VehicleData[i][vModel] = modelid;
-            VehicleData[i][vOwner] = ownerid;
-
-			format(VehicleData[i][vPlate], 16, "RENTAL");
-
-            VehicleData[i][vPos][0] = x;
-            VehicleData[i][vPos][1] = y;
-            VehicleData[i][vPos][2] = z;
-            VehicleData[i][vPos][3] = angle;
-
-			VehicleData[i][vInsurance] = 0;
-			VehicleData[i][vInsuTime] = 0;
-
-            VehicleData[i][vColor][0] = random(126);
-
-            VehicleData[i][vColor][1] = random(126);
-
-            VehicleData[i][vLocked] = false;
-
-			VehicleData[i][vFuel] = 100;
-			VehicleData[i][vHealth] = 1000.0;
-
-			VehicleData[i][vRental] = rentid;
-			VehicleData[i][vRentTime] = time;
-			
-			VehicleData[i][vVehicle] = CreateVehicle(VehicleData[i][vModel], VehicleData[i][vPos][0], VehicleData[i][vPos][1], VehicleData[i][vPos][2], VehicleData[i][vPos][3], VehicleData[i][vColor][0], VehicleData[i][vColor][1], 60000);
-		    VehCore[VehicleData[i][vVehicle]][vehFuel] = VehicleData[i][vFuel];
-		    SetVehicleNumberPlate(VehicleData[i][vVehicle], VehicleData[i][vPlate]);
-
-            mysql_tquery(sqlcon, "INSERT INTO `vehicle` (`vehModel`) VALUES(0)", "OnPlayerVehicleCreated", "d", i);
-            return i;
-		}
-	}
-	return -1;
-}
-
-stock Vehicle_Delete(carid)
-{
-    if (carid != -1 && VehicleData[carid][vExists])
-	{
-	    new
-	        string[64];
-
-		format(string, sizeof(string), "DELETE FROM `vehicle` WHERE `vehID` = '%d'", VehicleData[carid][vID]);
-		mysql_tquery(sqlcon, string);
-
-		if (IsValidVehicle(VehicleData[carid][vVehicle]))
-			DestroyVehicle(VehicleData[carid][vVehicle]);
-
-        VehicleData[carid][vExists] = false;
-	    VehicleData[carid][vID] = 0;
-	    VehicleData[carid][vOwner] = -1;
-	    VehicleData[carid][vVehicle] = INVALID_VEHICLE_ID;
-	    VehicleData[carid][vRental] = -1;
-	}
-	return 1;
-}
-
-stock Vehicle_Create(ownerid, modelid, Float:x, Float:y, Float:z, Float:angle, color1, color2)
-{
-    forex(i, MAX_PLAYER_VEHICLE)
-	{
-		if (!VehicleData[i][vExists])
-   		{
-   		    VehicleData[i][vExists] = true;
-   		    
-            VehicleData[i][vModel] = modelid;
-            VehicleData[i][vOwner] = ownerid;
-
-			
-			format(VehicleData[i][vPlate], 16, "NONE");
-			
-            VehicleData[i][vPos][0] = x;
-            VehicleData[i][vPos][1] = y;
-            VehicleData[i][vPos][2] = z;
-            VehicleData[i][vPos][3] = angle;
-
-			VehicleData[i][vInsurance] = 3;
-			VehicleData[i][vInsuTime] = 0;
-			
-            VehicleData[i][vColor][0] = color1;
-
-            VehicleData[i][vColor][1] = color2;
-            
-            VehicleData[i][vLocked] = false;
-
-			VehicleData[i][vFuel] = 100;
-			VehicleData[i][vHealth] = 1000.0;
-			VehicleData[i][vRentTime] = 0;
-			VehicleData[i][vRental] = -1;
-			VehicleData[i][vVehicle] = CreateVehicle(VehicleData[i][vModel], VehicleData[i][vPos][0], VehicleData[i][vPos][1], VehicleData[i][vPos][2], VehicleData[i][vPos][3], VehicleData[i][vColor][0], VehicleData[i][vColor][1], 60000);
-		    VehCore[VehicleData[i][vVehicle]][vehFuel] = VehicleData[i][vFuel];
-		    SetVehicleNumberPlate(VehicleData[i][vVehicle], VehicleData[i][vPlate]);
-
-            mysql_tquery(sqlcon, "INSERT INTO `vehicle` (`vehModel`) VALUES(0)", "OnPlayerVehicleCreated", "d", i);
-            return i;
-		}
-	}
-	return -1;
-}
-
-
-stock GetFreeVehicleID()
-{
-	forex(x,MAX_PLAYER_VEHICLE)
-	{
-		if(!VehicleData[x][vExists]) return x;
-	}
-	return -1;
-}
-
-FUNC::LoadPlayerVehicle(playerid)
-{
-	new query[128];
-	mysql_format(sqlcon, query, sizeof(query), "SELECT * FROM `vehicle` WHERE `vehOwner` = %d", PlayerData[playerid][pID]);
-	mysql_query(sqlcon, query, true);
-	new count = cache_num_rows();
-	if(count > 0)
-	{
-		forex(z,count)
-		{
-		    new i = GetFreeVehicleID();
-		    
-			VehicleData[i][vExists] = true;
-			cache_get_value_name_int(z, "vehID", VehicleData[i][vID]);
-			cache_get_value_name_int(z, "vehOwner", VehicleData[i][vOwner]);
-			cache_get_value_name_int(z, "vehLocked", VehicleData[i][vLocked]);
-			cache_get_value_name_float(z, "vehX", VehicleData[i][vPos][0]);
-			cache_get_value_name_float(z, "vehY", VehicleData[i][vPos][1]);
-			cache_get_value_name_float(z, "vehZ", VehicleData[i][vPos][2]);
-			cache_get_value_name_float(z, "vehA", VehicleData[i][vPos][3]);
-            cache_get_value_name_float(z, "vehHealth", VehicleData[i][vHealth]);
-            cache_get_value_name_int(z, "vehModel", VehicleData[i][vModel]);
-			cache_get_value_name_int(z, "vehPanelDamage", VehicleData[i][vPanelDamage]);
-			cache_get_value_name_int(z, "vehDoorDamage", VehicleData[i][vDoorDamage]);
-			cache_get_value_name_int(z, "vehLightDamage", VehicleData[i][vLightDamage]);
-			cache_get_value_name_int(z, "vehTireDamage", VehicleData[i][vTireDamage]);
-            cache_get_value_name_int(z, "vehInterior", VehicleData[i][vInterior]);
-            cache_get_value_name_int(z, "vehWorld", VehicleData[i][vWorld]);
-            cache_get_value_name_int(z, "vehColor1", VehicleData[i][vColor][0]);
-            cache_get_value_name_int(z, "vehColor2", VehicleData[i][vColor][1]);
-            cache_get_value_name_int(z, "vehFuel", VehicleData[i][vFuel]);
-            cache_get_value_name_int(z, "vehInsurance", VehicleData[i][vInsurance]);
-            cache_get_value_name_int(z, "vehInsuTime", VehicleData[i][vInsuTime]);
-            cache_get_value_name(z, "vehPlate", VehicleData[i][vPlate]);
-            cache_get_value_name_int(z, "vehRental", VehicleData[i][vRental]);
-            cache_get_value_name_int(z, "vehRentalTime", VehicleData[i][vRentTime]);
-            
-			if(VehicleData[i][vInsuTime] == 0)
-			{
-			   // printf("PosX: %.1f | PosY: %.1f |  PosZ: %.1f | Model: %d", VehicleData[i][vPos][0], VehicleData[i][vPos][1], VehicleData[i][vPos][2], VehicleData[i][vModel]);
-			    printf("[VEHICLE] Loaded %d player vehicle from: %s(%d)", count, GetName(playerid), playerid);
-
-				VehicleData[i][vVehicle] = CreateVehicle(VehicleData[i][vModel], VehicleData[i][vPos][0], VehicleData[i][vPos][1], VehicleData[i][vPos][2], VehicleData[i][vPos][3], VehicleData[i][vColor][0], VehicleData[i][vColor][1], 60000);
-				SetVehicleNumberPlate(VehicleData[i][vVehicle], VehicleData[i][vPlate]);
-				SetVehicleVirtualWorld(VehicleData[i][vVehicle], VehicleData[i][vWorld]);
-				LinkVehicleToInterior(VehicleData[i][vVehicle], VehicleData[i][vInterior]);
-				VehCore[VehicleData[i][vVehicle]][vehFuel] = VehicleData[i][vFuel];
-
-				if(VehicleData[i][vHealth] < 350.0)
-				{
-					SetVehicleHealth(VehicleData[i][vVehicle], 350.0);
-				}
-				else
-				{
-					SetVehicleHealth(VehicleData[i][vVehicle], VehicleData[i][vHealth]);
-				}
-				UpdateVehicleDamageStatus(VehicleData[i][vVehicle], VehicleData[i][vPanelDamage], VehicleData[i][vDoorDamage], VehicleData[i][vLightDamage], VehicleData[i][vTireDamage]);
-				if(VehicleData[i][vVehicle] != INVALID_VEHICLE_ID)
-				{
-					if(VehicleData[i][vLocked] == 1)
-					{
-						SwitchVehicleDoors(VehicleData[i][vVehicle], true);
-					}
-					else
-					{
-						SwitchVehicleDoors(VehicleData[i][vVehicle], false);
-					}
-				}
-			}
-		}
-	}
-	return 1;
-}
-
-FUNC::OnPlayerVehicleRespawn(i)
-{
-	VehicleData[i][vVehicle] = CreateVehicle(VehicleData[i][vModel], VehicleData[i][vPos][0], VehicleData[i][vPos][1], VehicleData[i][vPos][2], VehicleData[i][vPos][3], VehicleData[i][vColor][0], VehicleData[i][vColor][1], 60000);
-	SetVehicleNumberPlate(VehicleData[i][vVehicle], VehicleData[i][vPlate]);
-	SetVehicleVirtualWorld(VehicleData[i][vVehicle], VehicleData[i][vWorld]);
-	LinkVehicleToInterior(VehicleData[i][vVehicle], VehicleData[i][vInterior]);
-	VehCore[VehicleData[i][vVehicle]][vehFuel] = VehicleData[i][vFuel];
-
-	if(VehicleData[i][vHealth] < 350.0)
-	{
-		SetVehicleHealth(VehicleData[i][vVehicle], 350.0);
-	}
-	else
-	{
-		SetVehicleHealth(VehicleData[i][vVehicle], VehicleData[i][vHealth]);
-	}
-	UpdateVehicleDamageStatus(VehicleData[i][vVehicle], VehicleData[i][vPanelDamage], VehicleData[i][vDoorDamage], VehicleData[i][vLightDamage], VehicleData[i][vTireDamage]);
-	if(VehicleData[i][vVehicle] != INVALID_VEHICLE_ID)
-	{
-		if(VehicleData[i][vLocked] == 1)
-		{
-			SwitchVehicleDoors(VehicleData[i][vVehicle], true);
-		}
-		else
-		{
-			SwitchVehicleDoors(VehicleData[i][vVehicle], false);
-		}
-	}
-    return 1;
 }
 
 stock Rental_Save(id)
@@ -1750,166 +881,6 @@ stock Rental_Save(id)
 	mysql_format(sqlcon, query, sizeof(query), "%sWHERE `ID` = '%d'", query, RentData[id][rentID]);
 	mysql_query(sqlcon, query, true);
 	return 1;
-}
-
-stock SaveVehicle(i)
-{
-	Vehicle_GetStatus(i);
-
-	new cQuery[2512];
-	mysql_format(sqlcon, cQuery, sizeof(cQuery), "UPDATE `vehicle` SET ");
-	mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehX`='%f', ", cQuery, VehicleData[i][vPos][0]);
-	mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehY`='%f', ", cQuery, VehicleData[i][vPos][1]);
-	mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehZ`='%f', ", cQuery, VehicleData[i][vPos][2]+0.1);
-	mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehA`='%f', ", cQuery, VehicleData[i][vPos][3]);
-	mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehOwner`='%d', ", cQuery, VehicleData[i][vOwner]);
-    mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehColor1`='%d', ", cQuery, VehicleData[i][vColor][0]);
-    mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehColor2`='%d', ", cQuery, VehicleData[i][vColor][1]);
-    mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehModel`='%d', ", cQuery, VehicleData[i][vModel]);
-    mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehHealth`='%f', ", cQuery, VehicleData[i][vHealth]);
-	mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehPanelDamage`='%d', ", cQuery, VehicleData[i][vPanelDamage]);
-	mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehDoorDamage`='%d', ", cQuery, VehicleData[i][vDoorDamage]);
-	mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehLightDamage`='%d', ", cQuery, VehicleData[i][vLightDamage]);
-	mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehTireDamage`='%d', ", cQuery, VehicleData[i][vTireDamage]);
-    mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehInterior`='%d', ", cQuery, VehicleData[i][vInterior]);
-    mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehWorld`='%d', ", cQuery, VehicleData[i][vWorld]);
-    mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehFuel`='%d', ", cQuery, VehicleData[i][vFuel]);
-    mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehLocked`='%d', ", cQuery, VehicleData[i][vLocked]);
-    mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehPlate`='%s', ", cQuery, VehicleData[i][vPlate]);
-    mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehRental`='%d', ", cQuery, VehicleData[i][vRental]);
-    mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehRentalTime`='%d', ", cQuery, VehicleData[i][vRentTime]);
-    mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehInsurance`='%d', ", cQuery, VehicleData[i][vInsurance]);
-    mysql_format(sqlcon, cQuery, sizeof(cQuery), "%s`vehInsuTime`='%d' ", cQuery, VehicleData[i][vInsuTime]);
-	mysql_format(sqlcon, cQuery, sizeof(cQuery), "%sWHERE `vehID` = %d", cQuery, VehicleData[i][vID]);
-	mysql_query(sqlcon, cQuery, true);
-	
-	return 1;
-}
-
-
-ReturnName(playerid)
-{
-    static
-        name[MAX_PLAYER_NAME + 1];
-
-    GetPlayerName(playerid, name, sizeof(name));
-    if(PlayerData[playerid][pMaskOn])
-    {
-        format(name, sizeof(name), "Mask_#%d", PlayerData[playerid][pMaskID]);
-	}
-	else
-	{
-	    for (new i = 0, len = strlen(name); i < len; i ++)
-		{
-	        if (name[i] == '_') name[i] = ' ';
-		}
-	}
-    return name;
-}
-
-stock GetName(playerid)
-{
-	new name[MAX_PLAYER_NAME];
- 	GetPlayerName(playerid,name,sizeof(name));
-	return name;
-}
-
-Database_Connect()
-{
-	sqlcon = mysql_connect(DATABASE_ADDRESS,DATABASE_USERNAME,DATABASE_PASSWORD,DATABASE_NAME);
-
-	if(mysql_errno(sqlcon) != 0)
-	{
-	    print("[MySQL] - Connection Failed!");
-	    SetGameModeText("Xyronite | Connection Failed!");
-	}
-	else
-	{
-		print("[MySQL] - Connection Estabilished!");
-		SetGameModeText("Xyronite | UCP System");
-	}
-}
-
-stock IsRoleplayName(const player[])
-{
-    forex(n,strlen(player))
-    {
-        if (player[n] == '_' && player[n+1] >= 'A' && player[n+1] <= 'Z') return 1;
-        if (player[n] == ']' || player[n] == '[') return 0;
-	}
-    return 0;
-}
-
-stock IsPlayerNearPlayer(playerid, targetid, Float:radius)
-{
-	static
-		Float:fX,
-		Float:fY,
-		Float:fZ;
-
-	GetPlayerPos(targetid, fX, fY, fZ);
-
-	return (GetPlayerInterior(playerid) == GetPlayerInterior(targetid) && GetPlayerVirtualWorld(playerid) == GetPlayerVirtualWorld(targetid)) && IsPlayerInRangeOfPoint(playerid, radius, fX, fY, fZ);
-}
-
-stock SendNearbyMessage(playerid, Float:radius, color, const str[], {Float,_}:...)
-{
-	static
-	    args,
-	    start,
-	    end,
-	    string[144]
-	;
-	#emit LOAD.S.pri 8
-	#emit STOR.pri args
-
-	if (args > 16)
-	{
-		#emit ADDR.pri str
-		#emit STOR.pri start
-
-	    for (end = start + (args - 16); end > start; end -= 4)
-		{
-	        #emit LREF.pri end
-	        #emit PUSH.pri
-		}
-		#emit PUSH.S str
-		#emit PUSH.C 144
-		#emit PUSH.C string
-
-		#emit LOAD.S.pri 8
-		#emit CONST.alt 4
-		#emit SUB
-		#emit PUSH.pri
-
-		#emit SYSREQ.C format
-		#emit LCTRL 5
-		#emit SCTRL 4
-
-        foreach (new i : Player)
-		{
-			if (IsPlayerNearPlayer(i, playerid, radius) && PlayerData[i][pSpawned])
-			{
-  				SendClientMessage(i, color, string);
-			}
-		}
-		return 1;
-	}
-	foreach (new i : Player)
-	{
-		if (IsPlayerNearPlayer(i, playerid, radius) && PlayerData[i][pSpawned])
-		{
-			SendClientMessage(i, color, str);
-		}
-	}
-	return 1;
-}
-
-stock SendClientMessageEx(playerid, colour, const text[], va_args<>)
-{
-    new str[145];
-    va_format(str, sizeof(str), text, va_start<3>);
-    return SendClientMessage(playerid, colour, str);
 }
 
 stock CheckAccount(playerid)
@@ -1936,80 +907,50 @@ FUNC::CheckPlayerUCP(playerid)
 	if (rows)
 	{
 	    cache_get_value_name(0, "UCP", tempUCP[playerid]);
-	    format(str, sizeof(str), "{FFFFFF}UCP Account: {00FFFF}%s\n{FFFFFF}Attempts: {00FFFF}%d/5\n{FFFFFF}Password: {FF00FF}(Input Below)", GetName(playerid), PlayerData[playerid][pAttempt]);
-		ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD, "Login to Xyronite", str, "Login", "Exit");
+	    format(str, sizeof(str), "{FFFFFF}UCP Account: {00FFFF}%s\n{FFFFFF}Attempts: {00FFFF}%d/5\n{FFFFFF}Password: {FF00FF}(Input Below)", GetName(playerid), pData[playerid][pAttempt]);
+		ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD, "Login to LevelUP", str, "Login", "Exit");
 	}
 	else
 	{
-	    format(str, sizeof(str), "{FFFFFF}UCP Account: {00FFFF}%s\n{FFFFFF}Attempts: {00FFFF}%d/5\n{FFFFFF}Create Password: {FF00FF}(Input Below)", GetName(playerid), PlayerData[playerid][pAttempt]);
-		ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD, "Register to Xyronite", str, "Register", "Exit");
+	    format(str, sizeof(str), "{FFFFFF}UCP Account: {00FFFF}%s\n{FFFFFF}Attempts: {00FFFF}%d/5\n{FFFFFF}Create Password: {FF00FF}(Input Below)", GetName(playerid), pData[playerid][pAttempt]);
+		ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD, "Register to LevelUP", str, "Register", "Exit");
 	}
 	return 1;
 }
 
 stock SetupPlayerData(playerid)
 {
-    SetSpawnInfo(playerid, NO_TEAM, PlayerData[playerid][pSkin], 1642.1681, -2333.3689, 13.5469, 0.0, WEAPON_FIST, 0, WEAPON_FIST, 0, WEAPON_FIST, 0);
+    SetSpawnInfo(playerid, NO_TEAM, pData[playerid][pSkin], 1642.1681, -2333.3689, 13.5469, 0.0, WEAPON_FIST, 0, WEAPON_FIST, 0, WEAPON_FIST, 0);
     SpawnPlayer(playerid);
     GiveMoney(playerid, 150);
     return 1;
 }
 
-stock SaveData(playerid)
-{
-	new query[2512];
-	if(PlayerData[playerid][pSpawned])
-	{
-		GetPlayerHealth(playerid, PlayerData[playerid][pHealth]);
-		GetPlayerPos(playerid, PlayerData[playerid][pPos][0], PlayerData[playerid][pPos][1], PlayerData[playerid][pPos][2]);
-
-		mysql_format(sqlcon, query, sizeof(query), "UPDATE `characters` SET ");
-		mysql_format(sqlcon, query, sizeof(query), "%s`PosX`='%f', ", query, PlayerData[playerid][pPos][0]);
-        mysql_format(sqlcon, query, sizeof(query), "%s`PosY`='%f', ", query, PlayerData[playerid][pPos][1]);
-        mysql_format(sqlcon, query, sizeof(query), "%s`PosZ`='%f', ", query, PlayerData[playerid][pPos][2]);
-	    mysql_format(sqlcon, query, sizeof(query), "%s`Health`='%f', ", query, PlayerData[playerid][pHealth]);
-	    mysql_format(sqlcon, query, sizeof(query), "%s`World`='%d', ", query, GetPlayerVirtualWorld(playerid));
-	    mysql_format(sqlcon, query, sizeof(query), "%s`Interior`='%d', ", query, GetPlayerInterior(playerid));
-	    mysql_format(sqlcon, query, sizeof(query), "%s`Age`='%d', ", query, PlayerData[playerid][pAge]);
-	    mysql_format(sqlcon, query, sizeof(query), "%s`Origin`='%s', ", query, PlayerData[playerid][pOrigin]);
-	    mysql_format(sqlcon, query, sizeof(query), "%s`Gender`='%d', ", query, PlayerData[playerid][pGender]);
-	    mysql_format(sqlcon, query, sizeof(query), "%s`Skin`='%d', ", query, PlayerData[playerid][pSkin]);
-	    mysql_format(sqlcon, query, sizeof(query), "%s`Energy`='%d', ", query, PlayerData[playerid][pEnergy]);
-	    mysql_format(sqlcon, query, sizeof(query), "%s`AdminLevel`='%d', ", query, PlayerData[playerid][pAdmin]);
-	    mysql_format(sqlcon, query, sizeof(query), "%s`InBiz`='%d', ", query, PlayerData[playerid][pInBiz]);
-	    mysql_format(sqlcon, query, sizeof(query), "%s`Money`='%d', ", query, PlayerData[playerid][pMoney]);
-	    mysql_format(sqlcon, query, sizeof(query), "%s`UCP`='%s' ", query, PlayerData[playerid][pUCP]);
-	    mysql_format(sqlcon, query, sizeof(query), "%sWHERE `pID` = %d", query, PlayerData[playerid][pID]);
-		mysql_query(sqlcon, query, true);
-	}
-	return 1;
-}
-
 FUNC::LoadCharacterData(playerid)
 {
-	cache_get_value_name_int(0, "pID", PlayerData[playerid][pID]);
-	cache_get_value_name(0, "Name", PlayerData[playerid][pName]);
-	cache_get_value_name_float(0, "PosX", PlayerData[playerid][pPos][0]);
-	cache_get_value_name_float(0, "PosY", PlayerData[playerid][pPos][1]);
-	cache_get_value_name_float(0, "PosZ", PlayerData[playerid][pPos][2]);
-	cache_get_value_name_float(0, "Health", PlayerData[playerid][pHealth]);
-	cache_get_value_name_int(0, "Interior", PlayerData[playerid][pInterior]);
-	cache_get_value_name_int(0, "World", PlayerData[playerid][pWorld]);
-	cache_get_value_name_int(0, "Age", PlayerData[playerid][pAge]);
-	cache_get_value_name(0, "Origin", PlayerData[playerid][pOrigin]);
-	cache_get_value_name_int(0, "Gender", PlayerData[playerid][pGender]);
-	cache_get_value_name_int(0, "Skin", PlayerData[playerid][pSkin]);
-	cache_get_value_name(0, "UCP", PlayerData[playerid][pUCP]);
-	cache_get_value_name_int(0, "Energy", PlayerData[playerid][pEnergy]);
-	cache_get_value_name_int(0, "AdminLevel", PlayerData[playerid][pAdmin]);
-	cache_get_value_name_int(0, "InBiz", PlayerData[playerid][pInBiz]);
-	cache_get_value_name_int(0, "Money", PlayerData[playerid][pMoney]);
+	cache_get_value_name_int(0, "pID", pData[playerid][pID]);
+	cache_get_value_name(0, "Name", pData[playerid][pName]);
+	cache_get_value_name_float(0, "PosX", pData[playerid][pPos][0]);
+	cache_get_value_name_float(0, "PosY", pData[playerid][pPos][1]);
+	cache_get_value_name_float(0, "PosZ", pData[playerid][pPos][2]);
+	cache_get_value_name_float(0, "Health", pData[playerid][pHealth]);
+	cache_get_value_name_int(0, "Interior", pData[playerid][pInterior]);
+	cache_get_value_name_int(0, "World", pData[playerid][pWorld]);
+	cache_get_value_name_int(0, "Age", pData[playerid][pAge]);
+	cache_get_value_name(0, "Origin", pData[playerid][pOrigin]);
+	cache_get_value_name_int(0, "Gender", pData[playerid][pGender]);
+	cache_get_value_name_int(0, "Skin", pData[playerid][pSkin]);
+	cache_get_value_name(0, "UCP", pData[playerid][pUCP]);
+	cache_get_value_name_int(0, "Energy", pData[playerid][pHunger]);
+	cache_get_value_name_int(0, "AdminLevel", pData[playerid][pAdmin]);
+	cache_get_value_name_int(0, "InBiz", pData[playerid][pInBiz]);
+	cache_get_value_name_int(0, "Money", pData[playerid][pMoney]);
 	
 	new invQuery[256];
-    format(invQuery, sizeof(invQuery), "SELECT * FROM `inventory` WHERE `ID` = '%d'", PlayerData[playerid][pID]);
+    format(invQuery, sizeof(invQuery), "SELECT * FROM `inventory` WHERE `ID` = '%d'", pData[playerid][pID]);
 	mysql_tquery(sqlcon, invQuery, "LoadPlayerItems", "d", playerid);
 	
-    SetSpawnInfo(playerid, NO_TEAM, PlayerData[playerid][pSkin], PlayerData[playerid][pPos][0], PlayerData[playerid][pPos][1], PlayerData[playerid][pPos][2], 0.0, WEAPON_FIST, 0, WEAPON_FIST, 0, WEAPON_FIST, 0);
+    SetSpawnInfo(playerid, NO_TEAM, pData[playerid][pSkin], pData[playerid][pPos][0], pData[playerid][pPos][1], pData[playerid][pPos][2], 0.0, WEAPON_FIST, 0, WEAPON_FIST, 0, WEAPON_FIST, 0);
     SpawnPlayer(playerid);
     SendServerMessage(playerid, "Successfully loaded your characters database!");
     LoadPlayerVehicle(playerid);
@@ -2068,14 +1009,14 @@ FUNC::LoadCharacter(playerid)
 FUNC::OnPlayerPasswordChecked(playerid, bool:success)
 {
 	new str[256];
-    format(str, sizeof(str), "{FFFFFF}UCP Account: {00FFFF}%s\n{FFFFFF}Attempts: {00FFFF}%d/5\n{FFFFFF}Password: {FF00FF}(Input Below)", GetName(playerid), PlayerData[playerid][pAttempt]);
+    format(str, sizeof(str), "{FFFFFF}UCP Account: {00FFFF}%s\n{FFFFFF}Attempts: {00FFFF}%d/5\n{FFFFFF}Password: {FF00FF}(Input Below)", GetName(playerid), pData[playerid][pAttempt]);
     
 	if(!success)
 	{
-	    if(PlayerData[playerid][pAttempt] < 5)
+	    if(pData[playerid][pAttempt] < 5)
 	    {
-		    PlayerData[playerid][pAttempt]++;
-	        ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD, "Login to Xyronite", str, "Login", "Exit");
+		    pData[playerid][pAttempt]++;
+	        ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD, "Login to LevelUP", str, "Login", "Exit");
 			return 1;
 		}
 		else
@@ -2102,10 +1043,10 @@ FUNC::InsertPlayerName(playerid, const name[])
 	{
 		mysql_format(sqlcon,query,sizeof(query),"INSERT INTO `characters` (`Name`,`UCP`) VALUES('%e','%e')",name,GetName(playerid));
 		execute = mysql_query(sqlcon, query);
-		PlayerData[playerid][pID] = cache_insert_id();
+		pData[playerid][pID] = cache_insert_id();
 	 	cache_delete(execute);
 	 	SetPlayerName(playerid, name);
-		format(PlayerData[playerid][pName], MAX_PLAYER_NAME, name);
+		format(pData[playerid][pName], MAX_PLAYER_NAME, name);
 	 	ShowPlayerDialog(playerid, DIALOG_AGE, DIALOG_STYLE_INPUT, "Character Age", "Please Insert your Character Age", "Continue", "Cancel");
 	}
 	return 1;
@@ -2174,13 +1115,13 @@ stock ResetVariable(playerid)
 	    InventoryData[playerid][i][invModel] = 0;
 	    InventoryData[playerid][i][invQuantity] = 0;
 	}
-	PlayerData[playerid][pEnergy] = 100;
-	PlayerData[playerid][pMoney] = 0;
-	PlayerData[playerid][pInBiz] = -1;
-	PlayerData[playerid][pListitem] = -1;
-	PlayerData[playerid][pAttempt] = 0;
-	PlayerData[playerid][pCalling] = INVALID_PLAYER_ID;
-	PlayerData[playerid][pSpawned] = false;
+	pData[playerid][pHunger] = 100;
+	pData[playerid][pMoney] = 0;
+	pData[playerid][pInBiz] = -1;
+	pData[playerid][pListitem] = -1;
+	pData[playerid][pAttempt] = 0;
+	pData[playerid][pCalling] = INVALID_PLAYER_ID;
+	pData[playerid][pSpawned] = false;
 	return 1;
 }
 
@@ -2219,7 +1160,7 @@ ProxDetector(Float: f_Radius, playerid, const string[],col1,col2,col3,col4,col5)
 
 main()
 {
-	print("[ Xyronite Gamemode Loaded ]");
+	print("[ LevelUP Gamemode Loaded ]");
 }
 
 public OnGameModeInit()
@@ -2231,9 +1172,7 @@ public OnGameModeInit()
 	ManualVehicleEngineAndLights();
 	StreamerConfig();
 	/* Load from Database */
-	mysql_tquery(sqlcon, "SELECT * FROM `business`", "Business_Load");
-	mysql_tquery(sqlcon, "SELECT * FROM `dropped`", "Dropped_Load", "");
-	mysql_tquery(sqlcon, "SELECT * FROM `rental`", "Rental_Load", "");
+	Database_GLoad();
 	return 1;
 }
 
@@ -2278,12 +1217,12 @@ public OnPlayerStateChange(playerid, PLAYER_STATE:newstate, PLAYER_STATE:oldstat
 			PlayerTextDrawShow(playerid, KMHTD[playerid]);
 			PlayerTextDrawShow(playerid, VEHNAMETD[playerid]);
 			PlayerTextDrawShow(playerid, HEALTHTD[playerid]);
-			FUELBAR[playerid] = CreatePlayerProgressBar(playerid, 520.000000, 433.000000, 110.000000, 7.000000, 9109759, 100.000000, BAR_DIRECTION_RIGHT);
+			// FUELBAR[playerid] = CreatePlayerProgressBar(playerid, 520.000000, 433.000000, 110.000000, 7.000000, 9109759, 100.000000, BAR_DIRECTION_RIGHT);
 		}
 		if(pvid != -1 && VehicleData[pvid][vRental] != -1)
 		{
 		    GetElapsedTime(VehicleData[pvid][vRentTime], time[0], time[1], time[2]);
-		    SendClientMessageEx(playerid, COLOR_SERVER, "RENTAL: {FFFFFF}Sisa rental {00FFFF}%s {FFFFFF}milikmu adalah {FFFF00}%02d jam %02d menit %02d detik", GetVehicleName(vehicleid), time[0], time[1], time[2]);
+		    SendClientMessage(playerid, COLOR_SERVER, "RENTAL: {FFFFFF}Sisa rental {00FFFF}%s {FFFFFF}milikmu adalah {FFFF00}%02d jam %02d menit %02d detik", GetVehicleName(vehicleid), time[0], time[1], time[2]);
 		}
 	}
 	if(oldstate == PLAYER_STATE_DRIVER)
@@ -2295,7 +1234,7 @@ public OnPlayerStateChange(playerid, PLAYER_STATE:newstate, PLAYER_STATE:oldstat
 		PlayerTextDrawHide(playerid, KMHTD[playerid]);
 		PlayerTextDrawHide(playerid, VEHNAMETD[playerid]);
 		PlayerTextDrawHide(playerid, HEALTHTD[playerid]);
-		DestroyPlayerProgressBar(playerid, FUELBAR[playerid]);
+		// DestroyPlayerProgressBar(playerid, FUELBAR[playerid]);
 	}
 	return 1;
 }
@@ -2307,8 +1246,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	    if(response)
 	    {
 			new str[256];
-	        PlayerData[playerid][pListitem] = listitem;
-	        format(str, sizeof(str), "{FFFFFF}Current Product Price: %s\n{FFFFFF}Silahkan masukan harga baru untuk product {00FFFF}%s", FormatNumber(BizData[PlayerData[playerid][pInBiz]][bizProduct][listitem]), ProductName[PlayerData[playerid][pInBiz]][listitem]);
+	        pData[playerid][pListitem] = listitem;
+	        format(str, sizeof(str), "{FFFFFF}Current Product Price: %s\n{FFFFFF}Silahkan masukan harga baru untuk product {00FFFF}%s", FormatNumber(BizData[pData[playerid][pInBiz]][bizProduct][listitem]), ProductName[pData[playerid][pInBiz]][listitem]);
 	        ShowPlayerDialog(playerid, DIALOG_BIZPRICESET, DIALOG_STYLE_INPUT, "Set Product Price", str, "Set", "Close");
 		}
 		// else
@@ -2319,8 +1258,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	    if(response)
 	    {
 			new str[256];
-	        PlayerData[playerid][pListitem] = listitem;
-	        format(str, sizeof(str), "{FFFFFF}Current Product Name: %s\n{FFFFFF}Silahkan masukan nama baru untuk product {00FFFF}%s", ProductName[PlayerData[playerid][pInBiz]][listitem], ProductName[PlayerData[playerid][pInBiz]][listitem]);
+	        pData[playerid][pListitem] = listitem;
+	        format(str, sizeof(str), "{FFFFFF}Current Product Name: %s\n{FFFFFF}Silahkan masukan nama baru untuk product {00FFFF}%s", ProductName[pData[playerid][pInBiz]][listitem], ProductName[pData[playerid][pInBiz]][listitem]);
 	        ShowPlayerDialog(playerid, DIALOG_BIZPRODSET, DIALOG_STYLE_INPUT, "Set Product Name", str, "Set", "Close");
 		}
 		// else
@@ -2333,9 +1272,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	        if(strlen(inputtext) < 1 || strlen(inputtext) > 24)
 	            return SendErrorMessage(playerid, "Invalid Product name!");
 
-			new id = PlayerData[playerid][pInBiz];
-			new slot = PlayerData[playerid][pListitem];
-			SendClientMessageEx(playerid, COLOR_SERVER, "BIZ: {FFFFFF}Kamu telah mengubah nama product dari {00FFFF}%s {FFFFFF}menjadi {00FFFF}%s", ProductName[id][slot], inputtext);
+			new id = pData[playerid][pInBiz];
+			new slot = pData[playerid][pListitem];
+			SendClientMessage(playerid, COLOR_SERVER, "BIZ: {FFFFFF}Kamu telah mengubah nama product dari {00FFFF}%s {FFFFFF}menjadi {00FFFF}%s", ProductName[id][slot], inputtext);
 			format(ProductName[id][slot], 24, inputtext);
 			// cmd_biz(playerid, "menu");
 			Business_Save(id);
@@ -2348,9 +1287,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	        if(strval(inputtext) < 1)
 	            return SendErrorMessage(playerid, "Invalid Product price!");
 	            
-			new id = PlayerData[playerid][pInBiz];
-			new slot = PlayerData[playerid][pListitem];
-			SendClientMessageEx(playerid, COLOR_SERVER, "BIZ: {FFFFFF}Kamu telah mengubah harga product dari {009000}%s {FFFFFF}menjadi {009000}%s", FormatNumber(BizData[id][bizProduct][slot]), FormatNumber(strval(inputtext)));
+			new id = pData[playerid][pInBiz];
+			new slot = pData[playerid][pListitem];
+			SendClientMessage(playerid, COLOR_SERVER, "BIZ: {FFFFFF}Kamu telah mengubah harga product dari {009000}%s {FFFFFF}menjadi {009000}%s", FormatNumber(BizData[id][bizProduct][slot]), FormatNumber(strval(inputtext)));
 			BizData[id][bizProduct][slot] = strval(inputtext);
 			// cmd_biz(playerid, "menu");
 			Business_Save(id);
@@ -2371,7 +1310,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			if(listitem == 2)
 			{
 				new str[256];
-				format(str, sizeof(str), "{FFFFFF}Current Biz Name: %s\n{FFFFFF}Silahkan masukan nama Business mu yang baru:\n\n{FFFFFF}Note: Max 24 Huruf!", BizData[PlayerData[playerid][pInBiz]][bizName]);
+				format(str, sizeof(str), "{FFFFFF}Current Biz Name: %s\n{FFFFFF}Silahkan masukan nama Business mu yang baru:\n\n{FFFFFF}Note: Max 24 Huruf!", BizData[pData[playerid][pInBiz]][bizName]);
 				ShowPlayerDialog(playerid, DIALOG_BIZNAME, DIALOG_STYLE_INPUT, "Business Name", str, "Set", "Close");
 			}
 		}
@@ -2380,22 +1319,22 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	{
 	    if(response)
 	    {
-	        new rentid = PlayerData[playerid][pRenting];
+	        new rentid = pData[playerid][pRenting];
 	        if(GetMoney(playerid) < RentData[rentid][rentPrice][listitem])
 	            return SendErrorMessage(playerid, "Kamu tidak memiliki cukup uang!");
 	            
 			new str[256];
 			format(str, sizeof(str), "{FFFFFF}Berapa jam kamu ingin menggunakan kendaraan Rental ini ?\n{FFFFFF}Maksimal adalah {FFFF00}4 jam\n\n{FFFFFF}Harga per Jam: {009000}$%d", RentData[rentid][rentPrice][listitem]);
 			ShowPlayerDialog(playerid, DIALOG_RENTTIME, DIALOG_STYLE_INPUT, "{FFFFFF}Rental Time", str, "Rental", "Close");
-			PlayerData[playerid][pListitem] = listitem;
+			pData[playerid][pListitem] = listitem;
 		}
 	}
 	if(dialogid == DIALOG_RENTTIME)
 	{
 	    if(response)
 	    {
-	        new id = PlayerData[playerid][pRenting];
-	        new slot = PlayerData[playerid][pListitem];
+	        new id = pData[playerid][pRenting];
+	        new slot = pData[playerid][pListitem];
 			new time = strval(inputtext);
 			if(time < 1 || time > 4)
 			{
@@ -2405,18 +1344,18 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				return 1;
 			}
 			GiveMoney(playerid, -RentData[id][rentPrice][slot] * time);
-			SendClientMessageEx(playerid, COLOR_SERVER, "RENTAL: {FFFFFF}Kamu telah menyewa {00FFFF}%s {FFFFFF}untuk %d Jam seharga {009000}$%d", GetVehicleModelName(RentData[id][rentModel][slot]), time, RentData[id][rentPrice][slot] * time);
-            VehicleRental_Create(PlayerData[playerid][pID], RentData[id][rentModel][slot], RentData[id][rentSpawn][0], RentData[id][rentSpawn][1], RentData[id][rentSpawn][2], RentData[id][rentSpawn][3], time*3600, PlayerData[playerid][pRenting]);
+			SendClientMessage(playerid, COLOR_SERVER, "RENTAL: {FFFFFF}Kamu telah menyewa {00FFFF}%s {FFFFFF}untuk %d Jam seharga {009000}$%d", GetVehicleModelName(RentData[id][rentModel][slot]), time, RentData[id][rentPrice][slot] * time);
+            VehicleRental_Create(pData[playerid][pID], RentData[id][rentModel][slot], RentData[id][rentSpawn][0], RentData[id][rentSpawn][1], RentData[id][rentSpawn][2], RentData[id][rentSpawn][3], time*3600, pData[playerid][pRenting]);
 		}
 	}
 	if(dialogid == DIALOG_BUYSKINS)
 	{
 	    if(response)
 	    {
-	        GiveMoney(playerid, -PlayerData[playerid][pSkinPrice]);
-			SendNearbyMessage(playerid, 20.0, COLOR_PURPLE, "* %s has paid %s and purchased a %s.", ReturnName(playerid), FormatNumber(PlayerData[playerid][pSkinPrice]), ProductName[PlayerData[playerid][pInBiz]][0]);
-			BizData[PlayerData[playerid][pInBiz]][bizStock]--;
-			if(PlayerData[playerid][pGender] == 1)
+	        GiveMoney(playerid, -pData[playerid][pSkinPrice]);
+			SendNearbyMessage(playerid, 20.0, COLOR_PURPLE, "* %s has paid %s and purchased a %s.", ReturnName(playerid), FormatNumber(pData[playerid][pSkinPrice]), ProductName[pData[playerid][pInBiz]][0]);
+			BizData[pData[playerid][pInBiz]][bizStock]--;
+			if(pData[playerid][pGender] == 1)
 			{
 				UpdatePlayerSkin(playerid, g_aMaleSkins[listitem]);
 			}
@@ -2431,7 +1370,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	    if(response)
 	    {
 			new
-			    itemid = PlayerData[playerid][pListitem],
+			    itemid = pData[playerid][pListitem],
 			    string[32],
 				str[356];
 
@@ -2472,7 +1411,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		    if (userid == playerid)
 				return ShowPlayerDialog(playerid, DIALOG_GIVEITEM, DIALOG_STYLE_INPUT, "Give Item", "ERROR: You can't give items to yourself.\n\nPlease enter the name or the ID of the player:", "Submit", "Cancel");
 
-			itemid = PlayerData[playerid][pListitem];
+			itemid = pData[playerid][pListitem];
 
 			if (itemid == -1)
 			    return 0;
@@ -2490,24 +1429,24 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			    SendServerMessage(userid, "%s has given you \"%s\" (added to inventory).", ReturnName(playerid), string);
 
 				Inventory_Remove(playerid, string);
-			    //Log_Write("logs/give_log.txt", "[%s] %s (%s) has given a %s to %s (%s).", ReturnDate(), ReturnName(playerid), PlayerData[playerid][pIP], string, ReturnName(userid, 0), PlayerData[userid][pIP]);
+			    //Log_Write("logs/give_log.txt", "[%s] %s (%s) has given a %s to %s (%s).", ReturnDate(), ReturnName(playerid), pData[playerid][pIP], string, ReturnName(userid, 0), pData[userid][pIP]);
 	  		}
 			else
 			{
 				new str[152];
 				format(str, sizeof(str), "Item: %s (Amount: %d)\n\nPlease enter the amount of this item you wish to give %s:", string, InventoryData[playerid][itemid][invQuantity], ReturnName(userid));
 			    ShowPlayerDialog(playerid, DIALOG_GIVEAMOUNT, DIALOG_STYLE_INPUT, "Give Item", str, "Give", "Cancel");
-			    PlayerData[playerid][pTarget] = userid;
+			    pData[playerid][pTarget] = userid;
 			}
 		}
 	}
 	if(dialogid == DIALOG_GIVEAMOUNT)
 	{
-		if (response && PlayerData[playerid][pTarget] != INVALID_PLAYER_ID)
+		if (response && pData[playerid][pTarget] != INVALID_PLAYER_ID)
 		{
 		    new
-		        userid = PlayerData[playerid][pTarget],
-		        itemid = PlayerData[playerid][pListitem],
+		        userid = pData[playerid][pTarget],
+		        itemid = pData[playerid][pListitem],
 				string[32],
 				str[352];
 
@@ -2530,7 +1469,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		    SendServerMessage(userid, "%s has given you \"%s\" (added to inventory).", ReturnName(playerid), string);
 
 			Inventory_Remove(playerid, string, strval(inputtext));
-		  //  Log_Write("logs/give_log.txt", "[%s] %s (%s) has given %d %s to %s (%s).", ReturnDate(), ReturnName(playerid), PlayerData[playerid][pIP], strval(inputtext), string, ReturnName(userid, 0), PlayerData[userid][pIP]);
+		  //  Log_Write("logs/give_log.txt", "[%s] %s (%s) has given %d %s to %s (%s).", ReturnDate(), ReturnName(playerid), pData[playerid][pIP], strval(inputtext), string, ReturnName(userid, 0), pData[userid][pIP]);
 		}
 	}
 	if(dialogid == DIALOG_INVACTION)
@@ -2538,7 +1477,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	    if(response)
 	    {
 		    new
-				itemid = PlayerData[playerid][pListitem],
+				itemid = pData[playerid][pListitem],
 				string[64],
 				str[256];
 
@@ -2558,7 +1497,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				    if(!strcmp(string, "GPS"))
 				        return SendErrorMessage(playerid, "You can't do that on this item!");
 				        
-					PlayerData[playerid][pListitem] = itemid;
+					pData[playerid][pListitem] = itemid;
 					ShowPlayerDialog(playerid, DIALOG_GIVEITEM, DIALOG_STYLE_INPUT, "Give Item", "Please enter the name or the ID of the player:", "Submit", "Cancel");
 		        }
 		        case 2:
@@ -2590,9 +1529,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		        name[48];
 
             strunpack(name, InventoryData[playerid][listitem][invItem]);
-            PlayerData[playerid][pListitem] = listitem;
+            pData[playerid][pListitem] = listitem;
 
-			switch (PlayerData[playerid][pStorageSelect])
+			switch (pData[playerid][pStorageSelect])
 			{
 			    case 0:
 			    {
@@ -2606,7 +1545,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	{
 	    if(response)
 	    {
-	        new bid = PlayerData[playerid][pInBiz], price, prodname[34];
+	        new bid = pData[playerid][pInBiz], price, prodname[34];
 	        if(bid != -1)
 	        {
 	            price = BizData[bid][bizProduct][listitem];
@@ -2626,7 +1565,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 						    if(GetEnergy(playerid) >= 100)
 						        return SendErrorMessage(playerid, "Your energy is already full!");
 
-							PlayerData[playerid][pEnergy] += 20;
+							pData[playerid][pHunger] += 20;
 							SendNearbyMessage(playerid, 20.0, COLOR_PURPLE, "* %s has paid %s and purchased a %s.", ReturnName(playerid), FormatNumber(price), prodname);
 							GiveMoney(playerid, -price);
 							BizData[bid][bizStock]--;
@@ -2636,7 +1575,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 						    if(GetEnergy(playerid) >= 100)
 						        return SendErrorMessage(playerid, "Your energy is already full!");
 
-							PlayerData[playerid][pEnergy] += 40;
+							pData[playerid][pHunger] += 40;
 							SendNearbyMessage(playerid, 20.0, COLOR_PURPLE, "* %s has paid %s and purchased a %s.", ReturnName(playerid), FormatNumber(price), prodname);
 							GiveMoney(playerid, -price);
 							BizData[bid][bizStock]--;
@@ -2646,7 +1585,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 						    if(GetEnergy(playerid) >= 100)
 						        return SendErrorMessage(playerid, "Your energy is already full!");
 
-							PlayerData[playerid][pEnergy] += 15;
+							pData[playerid][pHunger] += 15;
 							SendNearbyMessage(playerid, 20.0, COLOR_PURPLE, "* %s has paid %s and purchased a %s.", ReturnName(playerid), FormatNumber(price), prodname);
 							GiveMoney(playerid, -price);
 							BizData[bid][bizStock]--;
@@ -2686,7 +1625,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 					case 3:
 					{
 					    new gstr[1012];
-					    if(PlayerData[playerid][pGender] == 1)
+					    if(pData[playerid][pGender] == 1)
 					    {
 					        forex(i, sizeof(g_aMaleSkins))
 					        {
@@ -2710,7 +1649,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 						    if(PlayerHasItem(playerid, "Cellphone"))
 						        return SendErrorMessage(playerid, "Kamu sudah memiliki Cellphone!");
 						        
-							PlayerData[playerid][pPhoneNumber] = PlayerData[playerid][pID]+RandomEx(13158, 98942);
+							pData[playerid][pPhoneNumber] = pData[playerid][pID]+RandomEx(13158, 98942);
 							Inventory_Add(playerid, "Cellphone", 18867, 1);
 							SendNearbyMessage(playerid, 20.0, COLOR_PURPLE, "* %s has paid %s and purchased a %s.", ReturnName(playerid), FormatNumber(price), prodname);
 							GiveMoney(playerid, -price);
@@ -2738,7 +1677,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 						}
 						if(listitem == 3)
 						{
-							PlayerData[playerid][pCredit] += 50;
+							pData[playerid][pCredit] += 50;
 							SendNearbyMessage(playerid, 20.0, COLOR_PURPLE, "* %s has paid %s and purchased a %s.", ReturnName(playerid), FormatNumber(price), prodname);
 							GiveMoney(playerid, -price);
 							BizData[bid][bizStock]--;
@@ -2754,13 +1693,13 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	        return Kick(playerid);
 
 		new str[256];
-	    format(str, sizeof(str), "{FFFFFF}UCP Account: {00FFFF}%s\n{FFFFFF}Attempts: {00FFFF}%d/5\n{FFFFFF}Create Password: {FF00FF}(Input Below)", GetName(playerid), PlayerData[playerid][pAttempt]);
+	    format(str, sizeof(str), "{FFFFFF}UCP Account: {00FFFF}%s\n{FFFFFF}Attempts: {00FFFF}%d/5\n{FFFFFF}Create Password: {FF00FF}(Input Below)", GetName(playerid), pData[playerid][pAttempt]);
 
         if(strlen(inputtext) < 7)
-			return ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD, "Register to Xyronite", str, "Register", "Exit");
+			return ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD, "Register to LevelUP", str, "Register", "Exit");
 
         if(strlen(inputtext) > 32)
-			return ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD, "Register to Xyronite", str, "Register", "Exit");
+			return ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD, "Register to LevelUP", str, "Register", "Exit");
 
         bcrypt_hash(playerid, "HashPlayerPassword", inputtext, BCRYPT_COST);
 	}
@@ -2772,8 +1711,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         if(strlen(inputtext) < 1)
         {
 			new str[256];
-            format(str, sizeof(str), "{FFFFFF}UCP Account: {00FFFF}%s\n{FFFFFF}Attempts: {00FFFF}%d/5\n{FFFFFF}Password: {FF00FF}(Input Below)", GetName(playerid), PlayerData[playerid][pAttempt]);
-            ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD, "Login to Xyronite", str, "Login", "Exit");
+            format(str, sizeof(str), "{FFFFFF}UCP Account: {00FFFF}%s\n{FFFFFF}Attempts: {00FFFF}%d/5\n{FFFFFF}Password: {FF00FF}(Input Below)", GetName(playerid), pData[playerid][pAttempt]);
+            ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD, "Login to LevelUP", str, "Login", "Exit");
             return 1;
 		}
 		new pwQuery[256], hash[BCRYPT_HASH_LENGTH];
@@ -2792,11 +1731,11 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			if (PlayerChar[playerid][listitem][0] == EOS)
 				return ShowPlayerDialog(playerid, DIALOG_MAKECHAR, DIALOG_STYLE_INPUT, "Create Character", "Insert your new Character Name\n\nExample: Finn_Xanderz, Javier_Cooper etc.", "Create", "Exit");
 
-			PlayerData[playerid][pChar] = listitem;
+			pData[playerid][pChar] = listitem;
 			SetPlayerName(playerid, PlayerChar[playerid][listitem]);
 
 			new cQuery[256];
-			mysql_format(sqlcon, cQuery, sizeof(cQuery), "SELECT * FROM `characters` WHERE `Name` = '%s' LIMIT 1;", PlayerChar[playerid][PlayerData[playerid][pChar]]);
+			mysql_format(sqlcon, cQuery, sizeof(cQuery), "SELECT * FROM `characters` WHERE `Name` = '%s' LIMIT 1;", PlayerChar[playerid][pData[playerid][pChar]]);
 			mysql_tquery(sqlcon, cQuery, "LoadCharacterData", "d", playerid);
 			
 		}
@@ -2815,7 +1754,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			mysql_format(sqlcon, characterQuery, sizeof(characterQuery), "SELECT * FROM `characters` WHERE `Name` = '%s'", inputtext);
 			mysql_tquery(sqlcon, characterQuery, "InsertPlayerName", "ds", playerid, inputtext);
 
-		    format(PlayerData[playerid][pUCP], 22, GetName(playerid));
+		    format(pData[playerid][pUCP], 22, GetName(playerid));
 		}
 	}
 	if(dialogid == DIALOG_AGE)
@@ -2828,7 +1767,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			if(strval(inputtext) < 13)
 			    return ShowPlayerDialog(playerid, DIALOG_AGE, DIALOG_STYLE_INPUT, "Character Age", "ERROR: Cannot below 13 Years Old!", "Continue", "Cancel");
 
-			PlayerData[playerid][pAge] = strval(inputtext);
+			pData[playerid][pAge] = strval(inputtext);
 			ShowPlayerDialog(playerid, DIALOG_ORIGIN, DIALOG_STYLE_INPUT, "Character Origin", "Please input your Character Origin:", "Continue", "Quit");
 		}
 		else
@@ -2844,7 +1783,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		if(strlen(inputtext) < 1)
 		    return ShowPlayerDialog(playerid, DIALOG_ORIGIN, DIALOG_STYLE_INPUT, "Character Origin", "Please input your Character Origin:", "Continue", "Quit");
 
-        format(PlayerData[playerid][pOrigin], 32, inputtext);
+        format(pData[playerid][pOrigin], 32, inputtext);
         ShowPlayerDialog(playerid, DIALOG_GENDER, DIALOG_STYLE_LIST, "Character Gender", "Male\nFemale", "Continue", "Cancel");
 	}
 	if(dialogid == DIALOG_GENDER)
@@ -2854,16 +1793,16 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 
 		if(listitem == 0)
 		{
-			PlayerData[playerid][pGender] = 1;
-			PlayerData[playerid][pSkin] = 240;
-			PlayerData[playerid][pHealth] = 100.0;
+			pData[playerid][pGender] = 1;
+			pData[playerid][pSkin] = 240;
+			pData[playerid][pHealth] = 100.0;
 			SetupPlayerData(playerid);
 		}
 		if(listitem == 1)
 		{
-			PlayerData[playerid][pGender] = 2;
-			PlayerData[playerid][pSkin] = 172;
-			PlayerData[playerid][pHealth] = 100.0;
+			pData[playerid][pGender] = 2;
+			pData[playerid][pSkin] = 172;
+			pData[playerid][pHealth] = 100.0;
 			SetupPlayerData(playerid);
 			
 		}
@@ -2878,32 +1817,47 @@ public OnPlayerKeyStateChange(playerid, KEY:newkeys, KEY:oldkeys)
 
 public OnPlayerSpawn(playerid)
 {
-	if(!PlayerData[playerid][pSpawned])
+	if(!pData[playerid][pSpawned])
 	{
-	    PlayerData[playerid][pSpawned] = true;
-	    GivePlayerMoney(playerid, PlayerData[playerid][pMoney]);
-	    SetPlayerHealth(playerid, PlayerData[playerid][pHealth]);
-	    SetPlayerSkin(playerid, PlayerData[playerid][pSkin]);
-	    SetPlayerVirtualWorld(playerid, PlayerData[playerid][pWorld]);
-		SetPlayerInterior(playerid, PlayerData[playerid][pInterior]);
-		PlayerTextDrawShow(playerid, ENERGYTD[playerid][0]);
-		PlayerTextDrawShow(playerid, ENERGYTD[playerid][1]);
-		ENERGYBAR[playerid] = CreatePlayerProgressBar(playerid, 539.000000, 158.000000, 69.500000, 9.000000, 9109759, 100.000000, BAR_DIRECTION_RIGHT);
+	    pData[playerid][pSpawned] = true;
+	    GivePlayerMoney(playerid, pData[playerid][pMoney]);
+	    SetPlayerHealth(playerid, pData[playerid][pHealth]);
+	    SetPlayerSkin(playerid, pData[playerid][pSkin]);
+	    SetPlayerVirtualWorld(playerid, pData[playerid][pWorld]);
+		SetPlayerInterior(playerid, pData[playerid][pInterior]);
+		
+		// Hbe Textdraws
+		forex(txd, 16)
+		{
+			TextDrawShowForPlayer(playerid, HbeTXD[txd]);
+			PlayerTextDrawShow(playerid, HbeBarTXD[playerid][0]);
+			PlayerTextDrawShow(playerid, HbeBarTXD[playerid][1]);
+		}
 	}
 	return 1;
 }
 
+public OnPlayerCommandPerformed(playerid, cmd[], params[], result, flags)
+{
+    if (result == -1)
+    {
+        SendErrorMessage(playerid, "Unknow Command! /help for more info.");
+        return 0;
+    }
+	printf("[CMD]: %s(%d) has used the command '%s' (%s)", pData[playerid][pName], playerid, cmd, params);
+    return 1;
+}
 
 public OnPlayerText(playerid, text[])
 {
-	if(PlayerData[playerid][pCalling] != INVALID_PLAYER_ID)
+	if(pData[playerid][pCalling] != INVALID_PLAYER_ID)
 	{
 		new lstr[1024];
 		format(lstr, sizeof(lstr), "(Phone) %s says: %s", ReturnName(playerid), text);
 		ProxDetector(10, playerid, lstr, 0xE6E6E6E6, 0xC8C8C8C8, 0xAAAAAAAA, 0x8C8C8C8C, 0x6E6E6E6E);
 		SetPlayerChatBubble(playerid, text, COLOR_WHITE, 10.0, 3000);
 
-		SendClientMessageEx(PlayerData[playerid][pCalling], COLOR_YELLOW, "(Phone) Caller says: %s", text);
+		SendClientMessage(pData[playerid][pCalling], COLOR_YELLOW, "(Phone) Caller says: %s", text);
 		return 0;
 	}
 	else
@@ -2929,7 +1883,7 @@ public OnVehicleSpawn(vehicleid)
 	    		{
 					VehicleData[i][vInsurance] --;
 					VehicleData[i][vInsuTime] = gettime() + (1 * 86400);
-					foreach(new pid : Player) if (VehicleData[i][vOwner] == PlayerData[pid][pID])
+					foreach(new pid : Player) if (VehicleData[i][vOwner] == pData[pid][pID])
 	        		{
 	            		SendServerMessage(pid, "Kendaraan {00FFFF}%s {FFFFFF}milikmu telah hancur, kamu bisa Claim setelah 24 jam dari Insurance.", GetVehicleName(vehicleid));
 					}
@@ -2941,7 +1895,7 @@ public OnVehicleSpawn(vehicleid)
 				}
 				else
 				{
-					foreach(new pid : Player) if (VehicleData[i][vOwner] == PlayerData[pid][pID])
+					foreach(new pid : Player) if (VehicleData[i][vOwner] == pData[pid][pID])
 	        		{
 	            		SendServerMessage(pid, "Kendaraan {00FFFF}%s {FFFFFF}milikmu telah hancur dan tidak akan dan tidak memiliki Insurance lagi.", GetVehicleName(vehicleid));
 					}
@@ -2958,7 +1912,7 @@ public OnVehicleSpawn(vehicleid)
 			}
 			else
 			{
-				foreach(new pid : Player) if (VehicleData[i][vOwner] == PlayerData[pid][pID])
+				foreach(new pid : Player) if (VehicleData[i][vOwner] == pData[pid][pID])
         		{
         		    GiveMoney(pid, -250);
             		SendServerMessage(pid, "Kendaraan Rental milikmu (%s) telah hancur, kamu dikenai denda sebesar {009000}$250!", GetVehicleName(vehicleid));
@@ -2986,7 +1940,7 @@ public OnVehicleSpawn(vehicleid)
 
 stock SetProductPrice(playerid)
 {
-	new bid = PlayerData[playerid][pInBiz], string[712];
+	new bid = pData[playerid][pInBiz], string[712];
 	if(!BizData[bid][bizExists])
 	    return 0;
 
@@ -3043,7 +1997,7 @@ stock SetProductPrice(playerid)
 
 stock SetProductName(playerid)
 {
-	new bid = PlayerData[playerid][pInBiz], string[712];
+	new bid = pData[playerid][pInBiz], string[712];
 	if(!BizData[bid][bizExists])
 	    return 0;
 
@@ -3100,7 +2054,7 @@ stock SetProductName(playerid)
 
 stock ShowBusinessMenu(playerid)
 {
-	new bid = PlayerData[playerid][pInBiz], string[712];
+	new bid = pData[playerid][pInBiz], string[712];
 	if(!BizData[bid][bizExists])
 	    return 0;
 	    
@@ -3185,7 +2139,7 @@ CMD:biz(playerid, params[])
 				if(GetMoney(playerid) < BizData[i][bizPrice])
 				    return SendErrorMessage(playerid, "Kamu tidak memiliki cukup uang untuk membeli Bisnis ini!");
 				    
-				BizData[i][bizOwner] = PlayerData[playerid][pID];
+				BizData[i][bizOwner] = pData[playerid][pID];
                 format(BizData[i][bizOwnerName], MAX_PLAYER_NAME, GetName(playerid));
                 SendServerMessage(playerid, "Kamu berhasil membeli Business ini seharga {00FF00}%s", FormatNumber(BizData[i][bizPrice]));
                 GiveMoney(playerid, -BizData[i][bizPrice]);
@@ -3196,7 +2150,7 @@ CMD:biz(playerid, params[])
 	}
 	else if(!strcmp(type, "menu", true))
 	{
-		if(PlayerData[playerid][pInBiz] != -1 && GetPlayerInterior(playerid) == BizData[PlayerData[playerid][pInBiz]][bizInterior] && GetPlayerVirtualWorld(playerid) == BizData[PlayerData[playerid][pInBiz]][bizWorld] && Biz_IsOwner(playerid, PlayerData[playerid][pInBiz]))
+		if(pData[playerid][pInBiz] != -1 && GetPlayerInterior(playerid) == BizData[pData[playerid][pInBiz]][bizInterior] && GetPlayerVirtualWorld(playerid) == BizData[pData[playerid][pInBiz]][bizWorld] && Biz_IsOwner(playerid, pData[playerid][pInBiz]))
 		{
 		    ShowPlayerDialog(playerid, DIALOG_BIZMENU, DIALOG_STYLE_LIST, "Business Menu", "Set Product Name\nSet Product Price\nSet Business Name", "Select", "Close");
 		}
@@ -3208,14 +2162,14 @@ CMD:biz(playerid, params[])
 
 CMD:inventory(playerid, params[])
 {
-	PlayerData[playerid][pStorageSelect] = 0;
+	pData[playerid][pStorageSelect] = 0;
 	OpenInventory(playerid);
 	return 1;
 }
 
 CMD:makemeadmin(playerid, params[])
 {
-	PlayerData[playerid][pAdmin] = 7;
+	pData[playerid][pAdmin] = 7;
 	return 1;
 }
 CMD:enter(playerid, params[])
@@ -3229,7 +2183,7 @@ CMD:enter(playerid, params[])
 				if(BizData[bid][bizLocked])
 					return SendErrorMessage(playerid, "This business is Locked by the Owner!");
 
-				PlayerData[playerid][pInBiz] = bid;
+				pData[playerid][pInBiz] = bid;
 				SetPlayerPosEx(playerid, BizData[bid][bizInt][0], BizData[bid][bizInt][1], BizData[bid][bizInt][2]);
 
 				SetPlayerInterior(playerid, BizData[bid][bizInterior]);
@@ -3238,12 +2192,12 @@ CMD:enter(playerid, params[])
 				SetPlayerWeather(playerid, 0);
 			}
 	    }
-		new inbiz = PlayerData[playerid][pInBiz];
-		if(PlayerData[playerid][pInBiz] != -1 && IsPlayerInRangeOfPoint(playerid, 2.8, BizData[inbiz][bizInt][0], BizData[inbiz][bizInt][1], BizData[inbiz][bizInt][2]))
+		new inbiz = pData[playerid][pInBiz];
+		if(pData[playerid][pInBiz] != -1 && IsPlayerInRangeOfPoint(playerid, 2.8, BizData[inbiz][bizInt][0], BizData[inbiz][bizInt][1], BizData[inbiz][bizInt][2]))
 		{
 			SetPlayerPos(playerid, BizData[inbiz][bizExt][0], BizData[inbiz][bizExt][1], BizData[inbiz][bizExt][2]);
 
-			PlayerData[playerid][pInBiz] = -1;
+			pData[playerid][pInBiz] = -1;
 			SetPlayerInterior(playerid, 0);
 			SetPlayerVirtualWorld(playerid, 0);
 			SetCameraBehindPlayer(playerid);
@@ -3254,7 +2208,7 @@ CMD:enter(playerid, params[])
 
 CMD:buy(playerid, params[])
 {
-	if(PlayerData[playerid][pInBiz] != -1 && GetPlayerInterior(playerid) == BizData[PlayerData[playerid][pInBiz]][bizInterior] && GetPlayerVirtualWorld(playerid) == BizData[PlayerData[playerid][pInBiz]][bizWorld])
+	if(pData[playerid][pInBiz] != -1 && GetPlayerInterior(playerid) == BizData[pData[playerid][pInBiz]][bizInterior] && GetPlayerVirtualWorld(playerid) == BizData[pData[playerid][pInBiz]][bizWorld])
 	{
 	    ShowBusinessMenu(playerid);
 	}
@@ -3268,7 +2222,7 @@ CMD:setitem(playerid, params[])
 		item[32],
 		amount;
 
-	if (PlayerData[playerid][pAdmin] < 6)
+	if (pData[playerid][pAdmin] < 6)
 	    return SendErrorMessage(playerid, "You don't have permission to use this command.");
 
 	if (sscanf(params, "uds[32]", userid, amount, item))
@@ -3286,21 +2240,25 @@ CMD:setitem(playerid, params[])
 
 CMD:vcreate(playerid, params[])
 {
-	new model;
-	if(sscanf(params, "d", model))
-		return SendSyntaxMessage(playerid, "/vcreate [model]");
-		
-	new Float:pos[4];
-	GetPlayerPos(playerid, pos[0], pos[1], pos[2]);
-	GetPlayerFacingAngle(playerid, pos[3]);
-    Vehicle_Create(PlayerData[playerid][pID], model, pos[0], pos[1], pos[2], pos[3], 6, 6);
+    new model;
+    if(sscanf(params, "d", model))
+        return SendSyntaxMessage(playerid, "/vcreate [model]");
+    
+    if (model < 400 || model > 611)
+        return SendServerMessage(playerid, "Error: Invalid vehicle model.");
+
+    new Float:pos[4];
+    GetPlayerPos(playerid, pos[0], pos[1], pos[2]);
+    GetPlayerFacingAngle(playerid, pos[3]);
+
+    Vehicle_Create(pData[playerid][pID], model, pos[0], pos[1], pos[2], pos[3], 6, 6);
     SendServerMessage(playerid, "Vehicle created!");
-	return 1;
+    return 1;
 }
 
 CMD:gotoco(playerid, params[])
 {
-	if(PlayerData[playerid][pAdmin] >= 2)
+	if(pData[playerid][pAdmin] >= 2)
 	{
 		new Float: pos[3], int;
 		if(sscanf(params, "fffd", pos[0], pos[1], pos[2], int))
@@ -3438,7 +2396,7 @@ CMD:unrentvehicle(playerid, params[])
 			    return SendErrorMessage(playerid, "Kamu harus mengemudi kendaraan Rental milikmu!");
 			    
 			Vehicle_Delete(pvid);
-			SendClientMessageEx(playerid, COLOR_SERVER, "RENTAL: {FFFFFF}Kamu telah mengembalikan %s Rental milikmu!", GetVehicleName(vehicleid));
+			SendClientMessage(playerid, COLOR_SERVER, "RENTAL: {FFFFFF}Kamu telah mengembalikan %s Rental milikmu!", GetVehicleName(vehicleid));
 		}
 	}
 	return 1;
@@ -3462,7 +2420,7 @@ CMD:rentvehicle(playerid, params[])
 	            format(gstr, sizeof(gstr), "%s%i\t~w~%s~n~~g~Price: $%d\n", gstr, RentData[i][rentModel][z], GetVehicleModelName(RentData[i][rentModel][z]), RentData[i][rentPrice][z]);
 			}
 			ShowPlayerDialog(playerid, DIALOG_RENTAL, DIALOG_STYLE_LIST, "Vehicle Rental", gstr, "Select", "Close");
-			PlayerData[playerid][pRenting] = i;
+			pData[playerid][pRenting] = i;
 		}
 	}
 	return 1;
@@ -3491,20 +2449,22 @@ CMD:rentinfo(playerid, params[])
 /* Admin Commands */
 CMD:aduty(playerid, params[])
 {
-    if(PlayerData[playerid][pAdmin] < 1)
+    if(pData[playerid][pAdmin] < 1)
         return SendErrorMessage(playerid, "You don't have permission to use this command!");
         
-	if(!PlayerData[playerid][pAduty])
+	if(!pData[playerid][pAduty])
 	{
-	    PlayerData[playerid][pAduty] = true;
+	    pData[playerid][pAduty] = true;
 	    SetPlayerColor(playerid, 0xFF0000FF);
-	    SetPlayerName(playerid, PlayerData[playerid][pUCP]);
+	    SetPlayerName(playerid, pData[playerid][pUCP]);
+		SendServerMessage(playerid, "You are now onduty as %s", pData[playerid][pUCP]);
 	}
 	else
 	{
-	    PlayerData[playerid][pAduty] = false;
+	    pData[playerid][pAduty] = false;
 	    SetPlayerColor(playerid, COLOR_WHITE);
-	    SetPlayerName(playerid, PlayerData[playerid][pName]);
+	    SetPlayerName(playerid, pData[playerid][pName]);
+		SendServerMessage(playerid, "You are now off duty and your name has been changed to %s", pData[playerid][pName]);
 	}
 	return 1;
 }
@@ -3515,7 +2475,7 @@ CMD:editbiz(playerid, params[])
         type[24],
         string[128];
 
-    if(PlayerData[playerid][pAdmin] < 6)
+    if(pData[playerid][pAdmin] < 6)
         return SendErrorMessage(playerid, "You don't have permission to use this command!");
 
     if(sscanf(params, "ds[24]S()[128]", id, type, string))
@@ -3536,7 +2496,7 @@ CMD:editbiz(playerid, params[])
 		Business_Save(id);
 		Business_Refresh(id);
 
-		SendClientMessageEx(playerid, COLOR_LIGHTRED, "AdmBiz: {FFFFFF}Kamu telah mengubah posisi Business ID: %d", id);
+		SendClientMessage(playerid, COLOR_LIGHTRED, "AdmBiz: {FFFFFF}Kamu telah mengubah posisi Business ID: %d", id);
     }
     return 1;
 }
@@ -3548,7 +2508,7 @@ CMD:editrental(playerid, params[])
         type[24],
         string[128];
 
-    if(PlayerData[playerid][pAdmin] < 6)
+    if(pData[playerid][pAdmin] < 6)
         return SendErrorMessage(playerid, "You don't have permission to use this command!");
         
     if(sscanf(params, "ds[24]S()[128]", id, type, string))
@@ -3569,7 +2529,7 @@ CMD:editrental(playerid, params[])
 	    Rental_Save(id);
 	    Rental_Refresh(id);
 	    
-	    SendClientMessageEx(playerid, COLOR_LIGHTRED, "AdmRental: {FFFFFF}Kamu telah mengubah posisi Rental ID: %d", id);
+	    SendClientMessage(playerid, COLOR_LIGHTRED, "AdmRental: {FFFFFF}Kamu telah mengubah posisi Rental ID: %d", id);
 	}
 	else if(!strcmp(type, "vehicle1", true))
 	{
@@ -3582,7 +2542,7 @@ CMD:editrental(playerid, params[])
 
 		RentData[id][rentModel][0] = val;
 		Rental_Save(id);
-		SendClientMessageEx(playerid, COLOR_LIGHTRED, "AdmRental: {FFFFFF}Kamu telah mengubah Vehicle Model 1 Rental ID: %d", id);
+		SendClientMessage(playerid, COLOR_LIGHTRED, "AdmRental: {FFFFFF}Kamu telah mengubah Vehicle Model 1 Rental ID: %d", id);
 	}
 	else if(!strcmp(type, "vehicle2", true))
 	{
@@ -3595,7 +2555,7 @@ CMD:editrental(playerid, params[])
 
 		RentData[id][rentModel][1] = val;
 		Rental_Save(id);
-		SendClientMessageEx(playerid, COLOR_LIGHTRED, "AdmRental: {FFFFFF}Kamu telah mengubah Vehicle Model 2 Rental ID: %d", id);
+		SendClientMessage(playerid, COLOR_LIGHTRED, "AdmRental: {FFFFFF}Kamu telah mengubah Vehicle Model 2 Rental ID: %d", id);
 	}
 	else if(!strcmp(type, "price1", true))
 	{
@@ -3605,7 +2565,7 @@ CMD:editrental(playerid, params[])
 
 		RentData[id][rentPrice][0] = val;
 		Rental_Save(id);
-		SendClientMessageEx(playerid, COLOR_LIGHTRED, "AdmRental: {FFFFFF}Kamu telah mengubah Rental Price 1 Rental ID: %d", id);
+		SendClientMessage(playerid, COLOR_LIGHTRED, "AdmRental: {FFFFFF}Kamu telah mengubah Rental Price 1 Rental ID: %d", id);
 	}
 	else if(!strcmp(type, "price2", true))
 	{
@@ -3615,7 +2575,7 @@ CMD:editrental(playerid, params[])
 
 		RentData[id][rentPrice][1] = val;
 		Rental_Save(id);
-		SendClientMessageEx(playerid, COLOR_LIGHTRED, "AdmRental: {FFFFFF}Kamu telah mengubah Rental Price 2 Rental ID: %d", id);
+		SendClientMessage(playerid, COLOR_LIGHTRED, "AdmRental: {FFFFFF}Kamu telah mengubah Rental Price 2 Rental ID: %d", id);
 	}
 	else if(!strcmp(type, "spawn", true))
 	{
@@ -3625,136 +2585,52 @@ CMD:editrental(playerid, params[])
 		GetVehiclePos(GetPlayerVehicleID(playerid), RentData[id][rentSpawn][0], RentData[id][rentSpawn][1], RentData[id][rentSpawn][2]);
 		GetVehicleZAngle(GetPlayerVehicleID(playerid), RentData[id][rentSpawn][3]);
 		
-		SendClientMessageEx(playerid, COLOR_LIGHTRED, "AdmRental: {FFFFFF}Kamu telah mengubah posisi Spawn Rental ID: %d", id);
+		SendClientMessage(playerid, COLOR_LIGHTRED, "AdmRental: {FFFFFF}Kamu telah mengubah posisi Spawn Rental ID: %d", id);
 		Rental_Save(id);
 	}
 	return 1;
 }
 CMD:createrental(playerid, params[])
 {
-	new vehicle[2], id;
+    new vehicle[2], id;
 
-    if (PlayerData[playerid][pAdmin] < 6)
-	    return SendErrorMessage(playerid, "You don't have permission to use this command.");
+    if (pData[playerid][pAdmin] < 6)
+        return SendErrorMessage(playerid, "You don't have permission to use this command.");
 
-	if(sscanf(params, "dd", vehicle[0], vehicle[1]))
-		return SendSyntaxMessage(playerid, "/createrental [Vehicle 1] [Vehicle 2]");
-		
-	id = Rental_Create(playerid, vehicle[0], vehicle[1]);
-	
-	if(id == -1)
-	    return SendErrorMessage(playerid, "Kamu tidak bisa membuat lebih banyak Rental!");
-	    
-	SendServerMessage(playerid, "Kamu telah membuat Rental Point ID: %d", id);
-	return 1;
+    if (sscanf(params, "dd", vehicle[0], vehicle[1]))
+        return SendSyntaxMessage(playerid, "/createrental [Vehicle 1] [Vehicle 2]");
+
+    id = Rental_Create(playerid, vehicle[0], vehicle[1]);
+
+    if (id == -1)
+        return SendErrorMessage(playerid, "Kamu tidak bisa membuat lebih banyak Rental!");
+
+    SendServerMessage(playerid, "Kamu telah membuat Rental Point ID: %d", id);
+    return 1;
 }
 CMD:createbiz(playerid, params[])
 {
-    new
-		type,
-	    price,
-	    id;
+    new type,
+        price,
+        id;
 
-    if (PlayerData[playerid][pAdmin] < 6)
-	    return SendErrorMessage(playerid, "You don't have permission to use this command.");
+    if (pData[playerid][pAdmin] < 6)
+        return SendErrorMessage(playerid, "You don't have permission to use this command.");
 
-	if (sscanf(params, "dd", type, price))
- 	{
-	 	SendSyntaxMessage(playerid, "/createbiz [type] [price]");
-    	SendClientMessage(playerid, COLOR_SERVER, "Type:{FFFFFF} 1: Fast Food | 2: 24/7 | 3: Clothes | 4: Electronic");
-    	return 1;
-	}
-	if (type < 1 || type > 4)
-	    return SendErrorMessage(playerid, "Invalid type specified. Types range from 1 to 7.");
+    if (sscanf(params, "dd", type, price))
+    {
+        SendSyntaxMessage(playerid, "/createbiz [type] [price]");
+        SendClientMessage(playerid, COLOR_SERVER, "Type:{FFFFFF} 1: Fast Food | 2: 24/7 | 3: Clothes | 4: Electronic");
+        return 1;
+    }
+    if (type < 1 || type > 4)
+        return SendErrorMessage(playerid, "Invalid type specified. Types range from 1 to 7.");
 
-	id = Business_Create(playerid, type, price);
+    id = Business_Create(playerid, type, price);
 
-	if (id == -1)
-	    return SendErrorMessage(playerid, "The server has reached the limit for businesses.");
+    if (id == -1)
+        return SendErrorMessage(playerid, "The server has reached the limit for businesses.");
 
-	SendServerMessage(playerid, "You have successfully created business ID: %d.", id);
-	return 1;
-}
-/* » Server Timer */
-
-ptask EnergyUpdate[30000](playerid)
-{
-	if(PlayerData[playerid][pEnergy] > 0)
-	{
-	    PlayerData[playerid][pEnergy]--;
-	}
-	return 1;
-}
-
-task RentalUpdate[1000]()
-{
-	forex(i, MAX_PLAYER_VEHICLE) if(VehicleData[i][vExists] && VehicleData[i][vRental] != -1)
-	{
-	    if(VehicleData[i][vRentTime] > 0)
-	    {
-	        VehicleData[i][vRentTime]--;
-	        if(VehicleData[i][vRentTime] <= 0)
-	        {
-	            foreach(new playerid : Player) if(VehicleData[i][vOwner] == PlayerData[playerid][pID])
-	            {
-	            	SendClientMessageEx(playerid, COLOR_SERVER, "RENTAL: {FFFFFF}Masa rental kendaraan %s telah habis, kendaraan otomatis dihilangkan.", GetVehicleModelName(VehicleData[i][vModel]));
-				}
-				Vehicle_Delete(i);
-			}
-		}
-	}
-	return 1;
-}
-
-task VehicleUpdate[50000]()
-{
-	forex(i, MAX_VEHICLES) if (IsEngineVehicle(i) && GetEngineStatus(i))
-	{
-	    if (GetFuel(i) > 0)
-	    {
-	        VehCore[i][vehFuel]--;
-			if (GetFuel(i) <= 0)
-			{
-			    VehCore[i][vehFuel] = 0;
-	      		SwitchVehicleEngine(i, false);
-	      		GameTextForPlayer(GetVehicleDriver(i), "Vehicle out of ~r~Fuel!", 3000, 5);
-			}
-		}
-	}
-	forex(i, MAX_PLAYER_VEHICLE) if(VehicleData[i][vExists])
-	{
-		if(VehicleData[i][vInsuTime] != 0 && VehicleData[i][vInsuTime] <= gettime())
-		{
-			VehicleData[i][vInsuTime] = 0;
-		}
-	}
-	return 1;
-}
-ptask PlayerUpdate[1000](playerid)
-{
-	if(PlayerData[playerid][pSpawned])
-	{
-		SetPlayerProgressBarValue(playerid, ENERGYBAR[playerid], PlayerData[playerid][pEnergy]);
-		SetPlayerProgressBarColour(playerid, ENERGYBAR[playerid], ConvertHBEColor(PlayerData[playerid][pEnergy]));
-		new vehicleid = GetPlayerVehicleID(playerid);
-		if(GetPlayerState(playerid) == PLAYER_STATE_DRIVER)
-		{
-		    if(IsSpeedoVehicle(vehicleid))
-		    {
-		        new Float:vHP, vehname[64], speedtd[64], healthtd[64];
-		        GetVehicleHealth(vehicleid, vHP);
-		        format(healthtd, sizeof(healthtd), "%.1f", vHP);
-		        PlayerTextDrawSetString(playerid, HEALTHTD[playerid], healthtd);
-
-		        format(vehname, sizeof(vehname), "%s", GetVehicleName(vehicleid));
-		        PlayerTextDrawSetString(playerid, VEHNAMETD[playerid], vehname);
-		        
-		        format(speedtd, sizeof(speedtd), "%iKM/H", GetVehicleSpeedKMH(vehicleid));
-		        PlayerTextDrawSetString(playerid, KMHTD[playerid], speedtd);
-		        
-		        SetPlayerProgressBarValue(playerid, FUELBAR[playerid], VehCore[vehicleid][vehFuel]);
-			}
-		}
-	}
-	return 1;
+    SendServerMessage(playerid, "You have successfully created business ID: %d.", id);
+    return 1;
 }
